@@ -8,7 +8,7 @@ interface CampaignRow {
   is_test: boolean
   date_created: string
   segment_id: { name: string } | null
-  geography: { country?: string, query?: string, areas?: string[], scanned?: Record<string, string>, news?: { seen?: string[], last?: string }, error?: string | null } | null
+  geography: { country?: string, query?: string, areas?: import('@lead/shared/places').Area[], scanned?: Record<string, string>, news?: { seen?: string[], last?: string }, error?: string | null } | null
 }
 
 export default defineEventHandler(async (event) => {

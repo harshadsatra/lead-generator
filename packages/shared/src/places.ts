@@ -57,11 +57,27 @@ export function toPlace(p: RawPlace): Place {
   }
 }
 
-export async function searchPlaces(apiKey: string, textQuery: string, pageToken?: string) {
+export interface Bounds { low: { lat: number, lng: number }, high: { lat: number, lng: number } }
+// A campaign area: plain text ("Andheri, Maharashtra") or a named map rectangle.
+export type Area = string | { name: string, bounds?: Bounds }
+export const areaName = (a: Area) => (typeof a === 'string' ? a : a.name)
+export const areaBounds = (a: Area) => (typeof a === 'string' ? undefined : a.bounds)
+
+// Text areas search "<query> in <area>"; map areas search <query> restricted to the rectangle.
+export const areaSearch = (query: string, a: Area) => (areaBounds(a) ? query : placesQuery(query, areaName(a)))
+
+export async function searchPlaces(apiKey: string, textQuery: string, pageToken?: string, bounds?: Bounds) {
   const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': FIELDS },
-    body: JSON.stringify({ textQuery, pageSize: 20, ...(pageToken ? { pageToken } : {}) }),
+    body: JSON.stringify({
+      textQuery,
+      pageSize: 20,
+      ...(pageToken ? { pageToken } : {}),
+      ...(bounds
+        ? { locationRestriction: { rectangle: { low: { latitude: bounds.low.lat, longitude: bounds.low.lng }, high: { latitude: bounds.high.lat, longitude: bounds.high.lng } } } }
+        : {})
+    }),
     signal: AbortSignal.timeout(30_000)
   })
   const json = await res.json() as { places?: RawPlace[], nextPageToken?: string, error?: { message: string } }

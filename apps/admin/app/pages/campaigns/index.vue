@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import type { Area } from '@lead/shared/places'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { COUNTRY_NAMES } from '@lead/shared'
 import { CAMPAIGN_STATUS, SOURCES } from '#shared/campaign'
@@ -10,34 +11,30 @@ const { data: segments } = await useFetch('/api/segments', { default: () => [] }
 
 const open = ref(false)
 const saving = ref(false)
-const form = reactive({ name: '', source: 'gbp' as 'gbp' | 'news', segment_id: '', country: 'GB', query: '', areasText: '', is_test: false })
+const form = reactive({ name: '', source: 'gbp' as 'gbp' | 'news', segment_id: '', country: 'GB', query: '', areas: [] as Area[], is_test: false })
 const sourceItems = Object.entries(SOURCES).map(([value, label]) => ({ label, value }))
 const countryItems = Object.entries(COUNTRY_NAMES).map(([value, label]) => ({ label, value }))
 const segmentItems = computed(() => segments.value.map(s => ({ label: s.name, value: s.id })))
 
-const lines = (t: string) => t.split('\n').map(a => a.trim()).filter(Boolean)
 const schema = z.object({
   name: z.string().trim().min(3, 'Give the campaign a name'),
   source: z.enum(['gbp', 'news']),
   segment_id: z.string().min(1, 'Pick a segment'),
   country: z.string().min(2, 'Pick a country'),
   query: z.string(),
-  areasText: z.string(),
+  areas: z.array(z.custom<Area>()),
   is_test: z.boolean()
 }).superRefine((f, ctx) => {
   if (f.source !== 'gbp') return
   if (f.query.trim().length < 3) ctx.addIssue({ code: 'custom', path: ['query'], message: 'What should Google search for?' })
-  const n = lines(f.areasText).length
-  if (!n) ctx.addIssue({ code: 'custom', path: ['areasText'], message: 'Add at least one area' })
-  if (n > 20) ctx.addIssue({ code: 'custom', path: ['areasText'], message: 'At most 20 areas' })
+  if (!f.areas.length) ctx.addIssue({ code: 'custom', path: ['areas'], message: 'Add at least one area' })
+  if (f.areas.length > 20) ctx.addIssue({ code: 'custom', path: ['areas'], message: 'At most 20 areas' })
 })
 
 async function onSubmit(e: FormSubmitEvent<typeof form>) {
-  const areas = lines(e.data.areasText)
   saving.value = true
   try {
-    const { areasText: _, ...rest } = e.data
-    const body = e.data.source === 'gbp' ? { ...rest, areas } : { ...rest, query: undefined }
+    const body = e.data.source === 'gbp' ? e.data : { ...e.data, query: undefined, areas: undefined }
     const c = await $fetch('/api/campaigns', { method: 'POST', body })
     open.value = false
     await navigateTo(`/campaigns/${c.id}`)
@@ -138,15 +135,10 @@ async function onSubmit(e: FormSubmitEvent<typeof form>) {
             <UFormField
               v-if="form.source === 'gbp'"
               label="Areas"
-              name="areasText"
-              help="One per line, e.g. &quot;Covent Garden, London&quot;. Up to 20; each area is up to 60 businesses."
+              name="areas"
+              help="Up to 20. Google returns at most 60 businesses per area, so neighbourhoods beat whole cities."
             >
-              <UTextarea
-                v-model="form.areasText"
-                :rows="4"
-                placeholder="Covent Garden, London&#10;Soho, London"
-                class="w-full"
-              />
+              <AreaPicker v-model="form.areas" :country="form.country" />
             </UFormField>
             <UCheckbox v-model="form.is_test" label="Test campaign (never sends; removed by le:cleanup-test)" />
             <div class="flex justify-end gap-2">

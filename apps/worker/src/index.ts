@@ -2,6 +2,7 @@
 // ponytail: polls Directus every 30 s; move to pg-boss (spec) when sending/follow-ups need scheduling.
 import { api, q } from './lib/db'
 import { processCampaign, type Segment } from './pipeline'
+import type { Area } from '@lead/shared/places'
 import { scanCampaign } from './agents/scanner-gbp'
 import { NEWS_EVERY_HOURS, scanNews } from './agents/scanner-news'
 import { REDDIT_EVERY_MINUTES, scanReddit } from './agents/reddit'
@@ -12,7 +13,7 @@ const log = (msg: string) => console.log(`${new Date().toISOString().slice(11, 1
 interface Geography {
   country: string
   query?: string
-  areas?: string[]
+  areas?: Area[]
   scanned?: Record<string, string>
   news?: { seen?: string[], last?: string }
   error?: string | null

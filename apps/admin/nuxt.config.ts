@@ -14,6 +14,10 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
+    public: {
+      // Browser key for the map picker; restrict it to Maps JavaScript API + your site in Google Cloud
+      googleMapsKey: ''
+    },
     directusUrl: 'https://cms.shwezstudio.in',
     session: {
       maxAge: 60 * 60 * 24 * 7

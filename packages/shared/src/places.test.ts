@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { toPlace } from './places'
+import { areaName, areaSearch, toPlace } from './places'
 
 test('maps a Places API (New) result', () => {
   const p = toPlace({
@@ -30,4 +30,11 @@ test('maps a Places API (New) result', () => {
   assert.equal(toPlace({ id: 'x' }).website, null)
   // Google sometimes omits `types` on an address component
   assert.equal(toPlace({ id: 'x', addressComponents: [{ longText: '?' }, { longText: 'Leeds', types: ['postal_town'] }] }).city, 'Leeds')
+})
+
+test('areas: text searches "in <area>", map areas search the query inside bounds', () => {
+  const box = { name: 'Andheri West (map)', bounds: { low: { lat: 19.12, lng: 72.82 }, high: { lat: 19.14, lng: 72.85 } } }
+  assert.equal(areaSearch('real estate agency', 'Andheri, Maharashtra'), 'real estate agency in Andheri, Maharashtra')
+  assert.equal(areaSearch('real estate agency', box), 'real estate agency')
+  assert.equal(areaName(box), 'Andheri West (map)')
 })

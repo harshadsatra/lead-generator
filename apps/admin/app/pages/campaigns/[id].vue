@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { COUNTRY_NAMES } from '@lead/shared'
+import { areaName } from '@lead/shared/places'
 import { CAMPAIGN_STATUS, SOURCES } from '#shared/campaign'
 
 const route = useRoute()
@@ -124,8 +125,9 @@ const day = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(undefined,
                   Areas
                 </dt>
                 <dd>
-                  <span v-for="a in c.geography?.areas ?? []" :key="a" class="block">
-                    {{ a }}<span v-if="c.geography?.scanned?.[a]" class="text-muted"> · scanned {{ day(c.geography.scanned[a]) }}</span>
+                  <span v-for="a in c.geography?.areas ?? []" :key="areaName(a)" class="flex items-center gap-1">
+                    <UIcon v-if="typeof a !== 'string'" name="i-lucide-map" class="size-3.5 text-muted" />
+                    {{ areaName(a) }}<span v-if="c.geography?.scanned?.[areaName(a)]" class="text-muted"> · scanned {{ day(c.geography.scanned[areaName(a)]) }}</span>
                   </span>
                 </dd>
               </div>

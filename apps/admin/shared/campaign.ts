@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+const LatLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
+// Plain text ("Andheri, Maharashtra") or a named map rectangle (searched inside its bounds).
+export const Area = z.union([
+  z.string().trim().min(2).max(100),
+  z.object({ name: z.string().trim().min(2).max(100), bounds: z.object({ low: LatLng, high: LatLng }) })
+])
+
 export const SOURCES = { gbp: 'Google Maps', news: 'Startup news (Inc42, YourStory)' } as const
 
 // Shared by the New campaign form and the server route.
@@ -9,7 +16,7 @@ export const CampaignInput = z.object({
   segment_id: z.uuid('Pick a segment'),
   country: z.string().regex(/^[A-Z]{2}$/, 'Pick a country'),
   query: z.string().trim().max(80).optional(),
-  areas: z.array(z.string().trim().min(2).max(100)).max(20, 'At most 20 areas per campaign').optional(),
+  areas: z.array(Area).max(20, 'At most 20 areas per campaign').optional(),
   is_test: z.boolean().default(false)
 }).superRefine((c, ctx) => {
   if (c.source !== 'gbp') return
