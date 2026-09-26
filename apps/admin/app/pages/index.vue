@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { REJECT_REASONS } from '@lead/shared'
+
 const route = useRoute()
 const router = useRouter()
 
@@ -9,12 +11,13 @@ const campaign = computed({
   set: v => router.replace({ query: { ...route.query, campaign: v } })
 })
 const state = computed({
-  get: () => (route.query.state === 'archived' ? 'archived' : 'awaiting_approval'),
+  get: () => (['approved', 'archived'].includes(route.query.state as string) ? route.query.state as string : 'awaiting_approval'),
   set: v => router.replace({ query: { ...route.query, state: v } })
 })
 
 const campaignItems = computed(() => campaigns.value.map(c => ({ label: c.is_test ? `${c.name} (test)` : c.name, value: c.id })))
-const tabs = [{ label: 'Awaiting approval', value: 'awaiting_approval' }, { label: 'Archived', value: 'archived' }]
+const tabs = [{ label: 'Awaiting approval', value: 'awaiting_approval' }, { label: 'Approved', value: 'approved' }, { label: 'Archived', value: 'archived' }]
+const OFFER_LABEL: Record<string, string> = { audit_pdf: 'Offer: full audit PDF', mockup: 'Offer: free homepage mockup', call_only: 'Offer: call ask only' }
 
 const { data: leads, status } = await useFetch('/api/leads', {
   query: { campaign, state },
@@ -22,6 +25,28 @@ const { data: leads, status } = await useFetch('/api/leads', {
   watch: [campaign, state],
   default: () => []
 })
+
+const toast = useToast()
+const offers = reactive<Record<string, 'audit_pdf' | 'mockup' | 'call_only'>>({})
+const busy = ref<string | null>(null)
+const offerItems = (band: string | null) => [
+  { label: 'Full audit PDF', value: 'audit_pdf' },
+  { label: 'Free homepage mockup', value: 'mockup', disabled: band !== 'hot' },
+  { label: 'Call ask only', value: 'call_only' }
+]
+
+async function decideLead(id: string, name: string, body: Record<string, string>) {
+  busy.value = id
+  try {
+    await $fetch(`/api/leads/${id}/decision`, { method: 'POST', body })
+    leads.value = leads.value.filter(l => l.id !== id)
+    toast.add({ title: `${name}: ${body.action === 'approve' ? 'approved' : 'rejected'}`, color: body.action === 'approve' ? 'success' : 'neutral' })
+  } catch (err) {
+    toast.add({ title: (err as { data?: { message?: string } }).data?.message ?? 'Could not save decision', color: 'error' })
+  } finally {
+    busy.value = null
+  }
+}
 
 const bandColor = (band: string | null) => (band === 'hot' ? 'error' : band === 'warm' ? 'warning' : 'neutral')
 const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error' : n < 90 ? 'warning' : 'success')
@@ -64,7 +89,7 @@ const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error
       <UEmpty
         v-else-if="status !== 'pending' && !leads.length"
         icon="i-lucide-inbox"
-        :title="state === 'archived' ? 'No archived leads' : 'No leads awaiting approval'"
+        :title="state === 'archived' ? 'No archived leads' : state === 'approved' ? 'No approved leads yet' : 'No leads awaiting approval'"
         description="Run pnpm le:process for this campaign to audit and score imported leads."
       />
       <div v-else class="grid gap-4 lg:grid-cols-2">
@@ -126,6 +151,10 @@ const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error
               No issues found.
             </p>
 
+            <UBadge v-if="state === 'approved' && lead.offer" color="primary" variant="subtle">
+              {{ OFFER_LABEL[lead.offer] }}
+            </UBadge>
+
             <p v-if="state === 'archived' && lead.closed_reason" class="text-muted">
               Archived: {{ lead.closed_reason }}
             </p>
@@ -146,6 +175,32 @@ const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error
                 <UIcon name="i-lucide-phone" />{{ lead.primary_contact_id.phone }}
               </span>
               <span v-if="!lead.primary_contact_id">No contact</span>
+            </div>
+            <div v-if="state === 'awaiting_approval'" class="mt-3 flex flex-wrap items-center gap-2">
+              <USelect
+                :model-value="offers[lead.id] ?? 'audit_pdf'"
+                :items="offerItems(lead.band)"
+                size="sm"
+                class="w-48"
+                @update:model-value="v => offers[lead.id] = v as 'audit_pdf' | 'mockup' | 'call_only'"
+              />
+              <UButton
+                label="Approve"
+                icon="i-lucide-check"
+                size="sm"
+                :loading="busy === lead.id"
+                @click="decideLead(lead.id, lead.business_id.name, { action: 'approve', offer: offers[lead.id] ?? 'audit_pdf' })"
+              />
+              <UDropdownMenu :items="REJECT_REASONS.map(reason => ({ label: reason, onSelect: () => decideLead(lead.id, lead.business_id.name, { action: 'reject', reason }) }))">
+                <UButton
+                  label="Reject"
+                  icon="i-lucide-x"
+                  size="sm"
+                  color="neutral"
+                  variant="outline"
+                  :disabled="busy === lead.id"
+                />
+              </UDropdownMenu>
             </div>
           </template>
         </UCard>

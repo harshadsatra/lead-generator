@@ -16,6 +16,8 @@ yet; each step is a plain function that pg-boss wraps later.
 - [x] Auditor v0 (no new dependencies): PSI mobile + desktop (score, LCP, CLS), SSL, mobile viewport, no working site (unreachable, parked, under construction, Facebook/Instagram-only, soft 404), contact form present, CMS (WordPress + version, WooCommerce, Shopify, Wix, Squarespace). Top 3 plain-language issues, each tied to a metric key. State → audited
 - [x] Scoring from audit + CSV facts with the rubric → `scored` → `awaiting_approval` (50+) or `archived` (<50, with reason)
 - [x] Admin: Directus fetch helper with access-token refresh; Approval inbox lists `awaiting_approval` leads for a chosen campaign (business, score/band, top issues, PSI, site link), read-only
+- [x] Too-small filter: `le_global_config.min_reviews` (default 10)
+- [x] Gate 1 in the inbox: Approve with offer picker (mockup only for hot, enforced server-side), Reject with one-tap reason, Approved tab as the Phase 0 send list. Every decision logs an event with the user's email
 - [ ] Harshad test: import 5–10 real leads; check 2–3 audits against pagespeed.web.dev by hand
 
 Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reacher, LLM agents, approve/send.
@@ -97,7 +99,7 @@ Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reache
 - [x] Server-side Directus fetch helper that refreshes the access token (`directusAsUser`)
 - [ ] Role-aware nav (Closer sees Hot replies only, etc.)
 - [ ] **Campaigns**: list, new-campaign form (spec § Campaign inputs; city list first, map picker later), pre-flight (sample scan, lead estimate, mailbox capacity, cost estimate), confirm, then Launch/Pause/Resume/Clone/Archive
-- [ ] **Approval inbox**: cards (business, score/band, top finding + screenshot, hook, draft), offer picker (mockup only for hot), Approve / Edit / Reject-with-reason / Snooze, A/E/R shortcuts, mobile-friendly
+- [ ] **Approval inbox**: add screenshot, draft message + Edit, Snooze, A/E/R shortcuts (cards, offer picker, Approve, Reject-with-reason done in §0)
 - [ ] Team + Settings: use Directus Data Studio (no custom screens in phase 1)
 - [ ] Check in a browser, desktop and phone width
 

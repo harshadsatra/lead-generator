@@ -7,6 +7,7 @@ interface DirectusTokens {
 }
 
 type Query = Record<string, string | number | boolean>
+interface Req { method?: 'GET' | 'POST' | 'PATCH', query?: Query, body?: Record<string, unknown> }
 
 const baseURL = () => useRuntimeConfig().directusUrl
 
@@ -42,7 +43,7 @@ function refresh(refreshToken: string) {
 }
 
 // Calls Directus as the signed-in user, so their LE role's permissions apply.
-export async function directusAsUser<T>(event: H3Event, path: string, query?: Query): Promise<T> {
+export async function directusAsUser<T>(event: H3Event, path: string, req: Req = {}): Promise<T> {
   const session = await requireUserSession(event)
   let tokens = session.secure!
   if (tokens.expiresAt - Date.now() < 60_000) {
@@ -54,7 +55,13 @@ export async function directusAsUser<T>(event: H3Event, path: string, query?: Qu
     }
     await setUserSession(event, { secure: tokens })
   }
-  return directusGet<T>(tokens.accessToken, path, query)
+  try {
+    return await request<T>(tokens.accessToken, path, req)
+  } catch (err) {
+    const status = (err as { statusCode?: number }).statusCode
+    if (status === 403) throw createError({ statusCode: 403, message: 'Your role is not allowed to do this' })
+    throw err
+  }
 }
 
 export async function directusLogout(refreshToken: string) {
@@ -62,11 +69,15 @@ export async function directusLogout(refreshToken: string) {
     .catch(() => {})
 }
 
-export async function directusGet<T>(accessToken: string, path: string, query?: Query) {
+async function request<T>(accessToken: string, path: string, req: Req) {
   const { data } = await $fetch<{ data: T }>(path, {
     baseURL: baseURL(),
+    method: req.method ?? 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
-    query
+    query: req.query,
+    body: req.body
   })
   return data
 }
+
+export const directusGet = <T>(accessToken: string, path: string, query?: Query) => request<T>(accessToken, path, { query })
