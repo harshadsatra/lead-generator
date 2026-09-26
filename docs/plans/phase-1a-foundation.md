@@ -51,8 +51,8 @@ Run these on the server and paste the results into `infra/SERVER.md`. Don't chan
 ## 4. Access to the shared Directus and queue DB
 
 - [x] Admin token in `.env` as `DIRECTUS_SETUP_TOKEN` (rotate after sharing it in chat)
-- [ ] Harshad creates (or approves Claude creating) the `LE Worker` user with a static token, with a role that has access to `le_*` only, plus a separate admin token used only by the setup script
-- [ ] Tokens go in local `.env` only (`DIRECTUS_TOKEN`, `DIRECTUS_SETUP_TOKEN`)
+- [x] `LE Worker` service user (token only, no password): reads/writes `le_*`, gets 403 on other projects. Worker never uses an admin token
+- [x] Tokens go in local `.env` only (`DIRECTUS_TOKEN`, `DIRECTUS_SETUP_TOKEN`)
 - [ ] Ask Harshad before creating the `lead_queue` database on the Directus Postgres (its own DB user, no access to the Directus DB)
 - [x] Admin login: `nuxt-auth-utils` sealed cookie session, Directus tokens server-side only, access limited to Directus admins + `LE *` roles, 2FA code supported, safe `redirect` param
 - [ ] Admin app reaches Directus through a Nuxt server proxy, so the shared instance needs no CORS change
