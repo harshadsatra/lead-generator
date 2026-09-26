@@ -44,7 +44,7 @@ Run these on the server and paste the results into `infra/SERVER.md`. Don't chan
 | Wappalyzer fingerprints | Added with the Auditor task (Phase 1b) |
 
 - [x] Clone the Nuxt UI dashboard template into `apps/admin`; `pnpm dev` runs
-- [ ] Strip template demo pages not in the spec's 6 screens (keep the layout shell)
+- [x] Strip template demo pages not in the spec's 6 screens (keep the layout shell)
 - [x] `apps/worker`: Node 22 + TS skeleton (folders get created by the first task that needs them)
 - [x] `packages/shared`: Zod schemas for enums (lead state, band, offer, channel, reply class)
 

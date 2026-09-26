@@ -1,7 +1,7 @@
 <template>
-  <UDashboardPanel id="approval-inbox">
+  <UDashboardPanel id="campaigns">
     <template #header>
-      <UDashboardNavbar title="Approval inbox">
+      <UDashboardNavbar title="Campaigns">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -10,9 +10,9 @@
 
     <template #body>
       <UEmpty
-        icon="i-lucide-inbox"
-        title="No leads awaiting approval"
-        description="Leads scored 50+ will appear here for review."
+        icon="i-lucide-megaphone"
+        title="No campaigns yet"
+        description="Campaigns set the segment, area, budget and team for each run."
       />
     </template>
   </UDashboardPanel>

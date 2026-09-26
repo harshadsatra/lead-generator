@@ -23,7 +23,7 @@ pnpm --filter @lead/shared exec tsx --test src/<file>.test.ts  # single test fil
 
 ## Layout
 
-- `apps/admin`: Nuxt 4 + Nuxt UI v4, from the `nuxt-ui-templates/dashboard` template (its demo pages are still there until the Phase 1a strip task). Talks to Directus through a Nuxt server proxy (no CORS changes on the shared instance).
+- `apps/admin`: Nuxt 4 + Nuxt UI v4, from the `nuxt-ui-templates/dashboard` template (demo stripped; Phase 1 screens: Approval inbox `/`, Campaigns `/campaigns`; Team + Settings live in Directus). Talks to Directus through a Nuxt server proxy (no CORS changes on the shared instance).
 - `apps/worker`: one Node 22 TS service that runs every agent. Reads and writes data through the Directus REST API (`DIRECTUS_TOKEN`, scoped to `le_*`). Jobs run on pg-boss in the separate `lead_queue` Postgres database (SSH tunnel in dev). Run with `tsx`, no build step.
 - `packages/shared`: Zod enums/schemas, lead state machine, scoring rubric. Consumed as TS source (`exports` → `src/index.ts`).
 - `infra/`: production Compose file (worker, reacher, admin) and `infra/directus/setup.ts`, the create-only schema script.
