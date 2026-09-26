@@ -99,6 +99,7 @@ const COLLECTIONS: Record<string, C> = {
       phone: { type: 'string' },
       locality: { type: 'string' },
       city: { type: 'string' },
+      country: { type: 'string', note: 'ISO 3166-1 alpha-2, e.g. GB, IN, US' },
       category: { type: 'string' },
       gbp_place_id: { type: 'string', unique: true },
       review_count: { type: 'integer' },

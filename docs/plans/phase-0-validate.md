@@ -19,16 +19,17 @@ reply, and write down any "not now" answers.
 
 ## Compliance minimum (DPDP)
 
-- [ ] Privacy notice page live on shwezstudio.in (covers outreach data, source, opt-out)
+- [ ] Privacy notice page live on shwezstudio.in (covers outreach data, source, opt-out; written so it also works for UK recipients)
 - [ ] Opt-out line in every email ("Reply 'stop' and I won't email again")
 - [ ] Suppression sheet: anyone who opts out goes on it the same day and is never emailed again
 - [ ] For each lead, record where the contact came from (source URL) and the date
 
 ## Leads
 
-- [ ] Pick 1 segment from the spec's list (suggested: real estate or restaurants, where there are case studies)
+- [ ] Market: **UK** (decided 27 Sep). Pick 1 segment, e.g. London real estate agencies
 - [ ] Write a one-page ICP: who qualifies, who is disqualified, which case study to cite
-- [ ] Resolve the lead source (see Open questions in README) and get 50 leads
+- [ ] Get 50 leads **with website URLs and emails** (the 26 Sep London export had neither: every Website cell was empty and no emails)
+- [ ] Import: `pnpm le:import <file.csv> --country GB --campaign "<name>" --segment "Real estate developers and brokers"`, then `pnpm le:process --campaign "<name>"`
 - [ ] Tracking sheet columns: business, contact, source URL, found date, PSI mobile, top 3 issues, sent date, follow-up dates, reply, class, next step
 
 ## Audits (by hand)
@@ -41,7 +42,7 @@ reply, and write down any "not now" answers.
 
 - [ ] Email template: under 120 words, opens with the audit finding, one ask, no attachments, plain text, at most one link
 - [ ] Ramp: max 15 new emails/day in week 1, 25 in week 2
-- [ ] Send only Tue–Thu, 9:30–11:30 or 15:00–17:00 IST
+- [ ] Send only Tue–Thu, 9:30–11:30 or 15:00–17:00 in the lead's local time (UK: GMT/BST, i.e. 14:00–16:00 / 19:30–21:30 IST while BST applies)
 - [ ] Follow-ups on day 3 and day 7, each adding something new (recommended: 42% of replies come from follow-ups, so skipping them undercounts the offer)
 - [ ] Watch bounces: stop if bounce rate goes above 3%
 

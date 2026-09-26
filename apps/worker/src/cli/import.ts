@@ -1,23 +1,27 @@
-// pnpm le:import <file.csv> --campaign "<name>" [--segment "<segment name>"] [--source mantis] [--test]
+// pnpm le:import <file.csv> --country GB --campaign "<name>" [--segment "<segment name>"] [--source mantis] [--test]
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { parseArgs } from 'node:util'
 import { api, one, transition, type Lead } from '../lib/db'
 import { csvToObjects } from '../lib/csv'
-import { firstEmail, hash, parseCount, mapColumns, normalizePhone, normalizeWebsite } from '../lib/normalize'
+import { firstEmail, hash, parseCount, mapColumns, normalizePhone, normalizeWebsite, SUPPORTED_COUNTRIES } from '../lib/normalize'
 
 const INACTIVE = ['archived', 'rejected', 'closed_no_response', 'closed_lost', 'suppressed']
 const ACTOR = 'import'
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { campaign: { type: 'string' }, segment: { type: 'string' }, source: { type: 'string', default: 'import' }, test: { type: 'boolean', default: false } }
+  options: { country: { type: 'string' }, campaign: { type: 'string' }, segment: { type: 'string' }, source: { type: 'string', default: 'import' }, test: { type: 'boolean', default: false } }
 })
 const file = positionals[0]
-if (!file || !values.campaign) {
-  console.error('Usage: pnpm le:import <file.csv> --campaign "<name>" [--segment "<segment>"] [--source mantis] [--test]')
+const countryArg = values.country?.toUpperCase()
+if (!file || !values.campaign || !countryArg || !/^[A-Z]{2}$/.test(countryArg)) {
+  console.error('Usage: pnpm le:import <file.csv> --country GB --campaign "<name>" [--segment "<segment>"] [--source mantis] [--test]')
+  console.error('--country is the ISO code of the leads\' country (GB, IN, US, ...)')
   process.exit(1)
 }
+const country: string = countryArg
+if (!SUPPORTED_COUNTRIES.includes(country)) console.warn(`Note: no phone rules for ${country}; phones are stored as given with a + prefix.`)
 
 async function campaignId(): Promise<string> {
   const existing = await one<{ id: string, is_test: boolean }>('le_campaigns', { name: { _eq: values.campaign } }, 'id,is_test')
@@ -80,7 +84,7 @@ async function main() {
       tally.skippedWebsiteUrlMissing++
       continue
     }
-    const phone = normalizePhone(get('phone'))
+    const phone = normalizePhone(get('phone'), country)
     const email = firstEmail(get('email'))
     const city = get('city') ?? ''
     if (await suppressed(email, phone, site.domain)) {
@@ -103,7 +107,7 @@ async function main() {
     } else {
       
       business = await api<{ id: string }>('POST', '/items/le_businesses', {
-        name, domain: site.domain, phone, city: city || null, locality: get('locality') ?? null,
+        name, domain: site.domain, phone, city: city || null, country, locality: get('locality') ?? null,
         category: get('category') ?? null, gbp_place_id: get('placeId') ?? null,
         review_count: parseCount(get('reviews'))
       })

@@ -18,11 +18,13 @@ test('website normalisation', () => {
   assert.equal(normalizeWebsite('').url, null)
 })
 
-test('phone normalisation', () => {
-  assert.equal(normalizePhone('+91 98200 12345'), '9820012345')
-  assert.equal(normalizePhone('098200 12345'), '9820012345')
-  assert.equal(normalizePhone('022 2640 1234, 98200 12345'), '02226401234'.slice(-10))
-  assert.equal(normalizePhone('123'), null)
+test('phone normalisation to E.164', () => {
+  for (const p of ['+91 98200 12345', '098200 12345', '98200 12345', '919820012345', '0091 98200 12345']) assert.equal(normalizePhone(p, 'IN'), '+919820012345', p)
+  for (const p of ['020 7836 8427', '+44 20 7836 8427', '+442078368427']) assert.equal(normalizePhone(p, 'GB'), '+442078368427', p)
+  assert.equal(normalizePhone('(917) 735-7178', 'US'), '+19177357178')
+  assert.equal(normalizePhone('1-917-735-7178', 'US'), '+19177357178')
+  assert.equal(normalizePhone('022 2640 1234, 98200 12345', 'IN'), '+912226401234')
+  assert.equal(normalizePhone('123', 'GB'), null)
 })
 
 test('review counts ignore ratings', () => {
