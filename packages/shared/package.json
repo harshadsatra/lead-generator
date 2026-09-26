@@ -5,7 +5,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./directus": "./src/directus.ts",
-    "./hash": "./src/hash.ts"
+    "./hash": "./src/hash.ts",
+    "./places": "./src/places.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",

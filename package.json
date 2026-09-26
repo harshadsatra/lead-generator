@@ -15,7 +15,8 @@
     "le:setup": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/setup.ts",
     "le:cleanup-test": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/cleanup-test.ts",
     "le:import": "tsx --env-file=.env apps/worker/src/cli/import.ts",
-    "le:process": "tsx --env-file=.env apps/worker/src/cli/process.ts"
+    "le:process": "tsx --env-file=.env apps/worker/src/cli/process.ts",
+    "le:worker": "tsx --env-file=.env apps/worker/src/index.ts"
   },
   "devDependencies": {
     "tsx": "^4.23.15"
