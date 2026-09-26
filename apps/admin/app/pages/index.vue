@@ -1,3 +1,32 @@
+<script setup lang="ts">
+const route = useRoute()
+const router = useRouter()
+
+const { data: campaigns } = await useFetch('/api/campaigns', { default: () => [] })
+
+const campaign = computed({
+  get: () => (route.query.campaign as string | undefined) ?? campaigns.value[0]?.id,
+  set: v => router.replace({ query: { ...route.query, campaign: v } })
+})
+const state = computed({
+  get: () => (route.query.state === 'archived' ? 'archived' : 'awaiting_approval'),
+  set: v => router.replace({ query: { ...route.query, state: v } })
+})
+
+const campaignItems = computed(() => campaigns.value.map(c => ({ label: c.is_test ? `${c.name} (test)` : c.name, value: c.id })))
+const tabs = [{ label: 'Awaiting approval', value: 'awaiting_approval' }, { label: 'Archived', value: 'archived' }]
+
+const { data: leads, status } = await useFetch('/api/leads', {
+  query: { campaign, state },
+  immediate: !!campaign.value,
+  watch: [campaign, state],
+  default: () => []
+})
+
+const bandColor = (band: string | null) => (band === 'hot' ? 'error' : band === 'warm' ? 'warning' : 'neutral')
+const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error' : n < 90 ? 'warning' : 'success')
+</script>
+
 <template>
   <UDashboardPanel id="approval-inbox">
     <template #header>
@@ -5,15 +34,122 @@
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
+        <template #right>
+          <USelect
+            v-if="campaignItems.length"
+            v-model="campaign"
+            :items="campaignItems"
+            placeholder="Campaign"
+            class="w-56"
+          />
+        </template>
       </UDashboardNavbar>
+      <UDashboardToolbar>
+        <UTabs
+          v-model="state"
+          :items="tabs"
+          :content="false"
+          size="sm"
+        />
+      </UDashboardToolbar>
     </template>
 
     <template #body>
       <UEmpty
-        icon="i-lucide-inbox"
-        title="No leads awaiting approval"
-        description="Leads scored 50+ will appear here for review."
+        v-if="!campaignItems.length"
+        icon="i-lucide-megaphone"
+        title="No campaigns yet"
+        description="Import leads with pnpm le:import to create one."
       />
+      <UEmpty
+        v-else-if="status !== 'pending' && !leads.length"
+        icon="i-lucide-inbox"
+        :title="state === 'archived' ? 'No archived leads' : 'No leads awaiting approval'"
+        description="Run pnpm le:process for this campaign to audit and score imported leads."
+      />
+      <div v-else class="grid gap-4 lg:grid-cols-2">
+        <UCard v-for="lead in leads" :key="lead.id">
+          <template #header>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="font-semibold truncate">
+                  {{ lead.business_id.name }}
+                </p>
+                <p class="text-sm text-muted truncate">
+                  {{ [lead.business_id.category, lead.business_id.city].filter(Boolean).join(' · ') }}
+                  <template v-if="lead.business_id.review_count !== null">
+                    · {{ lead.business_id.review_count }} reviews
+                  </template>
+                </p>
+              </div>
+              <UBadge :color="bandColor(lead.band)" variant="subtle" size="lg">
+                {{ lead.score ?? '–' }} {{ lead.band }}
+              </UBadge>
+            </div>
+          </template>
+
+          <div class="space-y-3 text-sm">
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                v-if="lead.business_id.domain"
+                :to="`https://${lead.business_id.domain}`"
+                target="_blank"
+                icon="i-lucide-external-link"
+                size="xs"
+                variant="soft"
+                color="neutral"
+                :label="lead.business_id.domain"
+              />
+              <UBadge v-else color="error" variant="soft">
+                No website
+              </UBadge>
+              <UBadge v-if="lead.audit?.psi_mobile != null" :color="psiColor(lead.audit.psi_mobile)" variant="soft">
+                Mobile {{ lead.audit.psi_mobile }}
+              </UBadge>
+              <UBadge v-if="lead.audit?.psi_desktop != null" :color="psiColor(lead.audit.psi_desktop)" variant="soft">
+                Desktop {{ lead.audit.psi_desktop }}
+              </UBadge>
+              <UBadge v-if="lead.audit?.has_ssl === false" color="error" variant="soft">
+                No HTTPS
+              </UBadge>
+              <UBadge v-if="lead.audit?.cms" color="neutral" variant="soft">
+                {{ lead.audit.cms }}
+              </UBadge>
+            </div>
+
+            <ol v-if="lead.plan?.issues?.length" class="list-decimal ps-5 space-y-1">
+              <li v-for="issue in lead.plan.issues" :key="issue.key">
+                {{ issue.text }}
+              </li>
+            </ol>
+            <p v-else class="text-muted">
+              No issues found.
+            </p>
+
+            <p v-if="state === 'archived' && lead.closed_reason" class="text-muted">
+              Archived: {{ lead.closed_reason }}
+            </p>
+          </div>
+
+          <template #footer>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+              <span v-if="lead.primary_contact_id?.email" class="flex items-center gap-1">
+                <UIcon name="i-lucide-mail" />{{ lead.primary_contact_id.email }}
+                <UBadge
+                  v-if="lead.primary_contact_id.verified_status !== 'valid'"
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                >unverified</UBadge>
+              </span>
+              <span v-if="lead.primary_contact_id?.phone" class="flex items-center gap-1">
+                <UIcon name="i-lucide-phone" />{{ lead.primary_contact_id.phone }}
+              </span>
+              <span v-if="!lead.primary_contact_id">No contact</span>
+            </div>
+          </template>
+        </UCard>
+      </div>
     </template>
   </UDashboardPanel>
 </template>

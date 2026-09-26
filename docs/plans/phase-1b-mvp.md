@@ -15,7 +15,7 @@ yet; each step is a plain function that pg-boss wraps later.
 - [x] CSV import: `pnpm le:import <file.csv> --campaign "<name>" --segment "<segment>" [--test]`. Tolerant headers (Mantis export, own sheet); dedupe on domain → phone → name+city; skip businesses active in another campaign; provenance (source, source_url, found_at); CSV email stored as an unverified contact. State: discovered → enriched
 - [x] Auditor v0 (no new dependencies): PSI mobile + desktop (score, LCP, CLS), SSL, mobile viewport, no working site (unreachable, parked, under construction, Facebook/Instagram-only, soft 404), contact form present, CMS (WordPress + version, WooCommerce, Shopify, Wix, Squarespace). Top 3 plain-language issues, each tied to a metric key. State → audited
 - [x] Scoring from audit + CSV facts with the rubric → `scored` → `awaiting_approval` (50+) or `archived` (<50, with reason)
-- [ ] Admin: Directus fetch helper with access-token refresh; Approval inbox lists `awaiting_approval` leads for a chosen campaign (business, score/band, top issues, PSI, site link), read-only
+- [x] Admin: Directus fetch helper with access-token refresh; Approval inbox lists `awaiting_approval` leads for a chosen campaign (business, score/band, top issues, PSI, site link), read-only
 - [ ] Harshad test: import 5–10 real leads; check 2–3 audits against pagespeed.web.dev by hand
 
 Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reacher, LLM agents, approve/send.
@@ -94,7 +94,7 @@ Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reache
 ## 8. Admin UI (Nuxt)
 
 - [x] Login against Directus (built early, see Phase 1a §4)
-- [ ] Server-side Directus fetch helper that refreshes the access token (with the first data route)
+- [x] Server-side Directus fetch helper that refreshes the access token (`directusAsUser`)
 - [ ] Role-aware nav (Closer sees Hot replies only, etc.)
 - [ ] **Campaigns**: list, new-campaign form (spec § Campaign inputs; city list first, map picker later), pre-flight (sample scan, lead estimate, mailbox capacity, cost estimate), confirm, then Launch/Pause/Resume/Clone/Archive
 - [ ] **Approval inbox**: cards (business, score/band, top finding + screenshot, hook, draft), offer picker (mockup only for hot), Approve / Edit / Reject-with-reason / Snooze, A/E/R shortcuts, mobile-friendly
