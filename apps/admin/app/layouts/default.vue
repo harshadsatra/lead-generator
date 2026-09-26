@@ -28,6 +28,11 @@ const links = [[{
   icon: 'i-lucide-megaphone',
   to: '/campaigns',
   onSelect: close
+}, {
+  label: 'Segments',
+  icon: 'i-lucide-shapes',
+  to: '/segments',
+  onSelect: close
 }], [{
   label: 'Team & settings',
   icon: 'i-lucide-settings',

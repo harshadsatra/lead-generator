@@ -7,7 +7,7 @@ interface DirectusTokens {
 }
 
 type Query = Record<string, string | number | boolean>
-interface Req { method?: 'GET' | 'POST' | 'PATCH', query?: Query, body?: Record<string, unknown> }
+interface Req { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE', query?: Query, body?: Record<string, unknown> }
 
 const baseURL = () => useRuntimeConfig().directusUrl
 
@@ -70,14 +70,20 @@ export async function directusLogout(refreshToken: string) {
 }
 
 async function request<T>(accessToken: string, path: string, req: Req) {
-  const { data } = await $fetch<{ data: T }>(path, {
+  // DELETE answers 204 with no body.
+  const res = await $fetch<{ data: T } | undefined>(path, {
     baseURL: baseURL(),
     method: req.method ?? 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
     query: req.query,
     body: req.body
   })
-  return data
+  return res?.data as T
 }
 
 export const directusGet = <T>(accessToken: string, path: string, query?: Query) => request<T>(accessToken, path, { query })
+
+export function uniqueName(err: unknown): never {
+  if (directusErrorCode(err) === 'RECORD_NOT_UNIQUE') throw createError({ statusCode: 409, message: 'That name is already taken' })
+  throw err
+}

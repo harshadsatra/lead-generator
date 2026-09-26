@@ -6,23 +6,7 @@ import { CAMPAIGN_STATUS, CampaignInput } from '#shared/campaign'
 
 const toast = useToast()
 const { data: campaigns } = await useFetch('/api/campaigns', { default: () => [] })
-const { data: segments, refresh: refreshSegments } = await useFetch('/api/segments', { default: () => [] })
-
-const newSegment = reactive({ open: false, name: '', service: '', case_studies: '', saving: false })
-async function saveSegment() {
-  newSegment.saving = true
-  try {
-    const s = await $fetch('/api/segments', { method: 'POST', body: { name: newSegment.name, service: newSegment.service, case_studies: newSegment.case_studies } })
-    await refreshSegments()
-    form.segment_id = s.id
-    Object.assign(newSegment, { open: false, name: '', service: '', case_studies: '' })
-    toast.add({ title: `Segment "${s.name}" created`, color: 'success' })
-  } catch (err) {
-    toast.add({ title: (err as { data?: { message?: string } }).data?.message ?? 'Could not create segment', color: 'error' })
-  } finally {
-    newSegment.saving = false
-  }
-}
+const { data: segments } = await useFetch('/api/segments', { default: () => [] })
 
 const open = ref(false)
 const saving = ref(false)
@@ -115,34 +99,12 @@ async function onSubmit(e: FormSubmitEvent<typeof form>) {
                 class="w-full"
               />
               <UButton
-                v-if="!newSegment.open"
-                label="+ New segment"
+                to="/segments"
+                label="Manage segments"
                 variant="link"
                 size="xs"
                 class="px-0 mt-1"
-                @click="newSegment.open = true"
               />
-              <div v-else class="mt-2 space-y-2 rounded-md border border-default p-3">
-                <UInput v-model="newSegment.name" placeholder="Segment name, e.g. Dental clinics" class="w-full" />
-                <UInput v-model="newSegment.service" placeholder="Service you'd sell (optional)" class="w-full" />
-                <UInput v-model="newSegment.case_studies" placeholder="Case study to cite (optional)" class="w-full" />
-                <div class="flex justify-end gap-2">
-                  <UButton
-                    label="Cancel"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    @click="newSegment.open = false"
-                  />
-                  <UButton
-                    label="Save segment"
-                    size="xs"
-                    :loading="newSegment.saving"
-                    :disabled="newSegment.name.trim().length < 3"
-                    @click="saveSegment"
-                  />
-                </div>
-              </div>
             </UFormField>
             <UFormField label="Country" name="country">
               <USelect v-model="form.country" :items="countryItems" class="w-full" />
