@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { REJECT_REASONS, ReplyClass } from '@lead/shared'
+import { REJECT_REASONS, ReplyClass, whatsappDraft, whatsappLink } from '@lead/shared'
 
 const route = useRoute()
 const router = useRouter()
@@ -92,9 +92,28 @@ async function act(id: string, action: 'decision' | 'sent' | 'reply' | 'close', 
   }
 }
 
-const sentSteps = (lead: { messages: { step: number, status: string, sent_at: string | null }[] }) =>
+type LeadRow = typeof leads.value[number]
+const { user } = useUserSession()
+const usedWhatsapp = reactive<Record<string, boolean>>({})
+// Channel for the next send: WhatsApp if just opened or no email to write to; otherwise the lead's channel.
+const channelFor = (lead: LeadRow): 'email' | 'whatsapp' =>
+  usedWhatsapp[lead.id] || (lead.state === 'in_sequence' ? lead.channel === 'whatsapp' : !lead.primary_contact_id?.email && !!lead.primary_contact_id?.phone)
+    ? 'whatsapp'
+    : 'email'
+const channelName = (c: string | null) => (c === 'whatsapp' ? 'WhatsApp' : 'email')
+const nextLabel = (lead: LeadRow) => {
+  const n = sentSteps(lead).length
+  return n === 0 ? `first ${channelName(channelFor(lead))}` : `${channelName(channelFor(lead))} follow-up ${n}`
+}
+const waLink = (lead: LeadRow) => whatsappLink(lead.primary_contact_id!.phone!, whatsappDraft({
+  senderName: user.value?.name.split(' ')[0] ?? '',
+  businessName: lead.business_id.name,
+  hook: lead.plan?.hook ?? null,
+  service: lead.plan?.service ?? null
+}))
+const sentSteps = (lead: { messages: { step: number, status: string, sent_at: string | null, channel: string | null }[] }) =>
   lead.messages.filter(m => m.status === 'sent').sort((a, b) => a.step - b.step)
-const stepName = (step: number) => (step === 0 ? 'First email' : `Follow-up ${step}`)
+const stepName = (step: number, channel: string | null) => `${step === 0 ? 'First' : `Follow-up ${step}`} ${channelName(channel)}`
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '')
 const bandColor = (band: string | null) => (band === 'hot' ? 'error' : band === 'warm' ? 'warning' : 'neutral')
 const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error' : n < 90 ? 'warning' : 'success')
@@ -227,7 +246,7 @@ const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error
             </UBadge>
 
             <p v-if="sentSteps(lead).length" class="text-muted">
-              <span v-for="(m, i) in sentSteps(lead)" :key="m.step">{{ i ? ' · ' : '' }}{{ stepName(m.step) }} {{ day(m.sent_at) }}</span>
+              <span v-for="(m, i) in sentSteps(lead)" :key="m.step">{{ i ? ' · ' : '' }}{{ stepName(m.step, m.channel) }} {{ day(m.sent_at) }}</span>
             </p>
             <p v-if="lead.replies.length" class="text-muted">
               Reply: {{ lead.replies.map(r => REPLY_LABEL[r.classification as ReplyClass] ?? r.classification).join(', ') }}
@@ -285,11 +304,22 @@ const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error
 
             <div v-else-if="view === 'to_send' || view === 'sent'" class="mt-3 flex flex-wrap items-center gap-2">
               <UButton
-                :label="`Mark ${stepName(sentSteps(lead).length).toLowerCase()} as sent`"
+                v-if="lead.primary_contact_id?.phone"
+                :to="waLink(lead)"
+                target="_blank"
+                icon="i-simple-icons-whatsapp"
+                label="WhatsApp"
+                color="success"
+                variant="soft"
+                size="sm"
+                @click="usedWhatsapp[lead.id] = true"
+              />
+              <UButton
+                :label="`Mark ${nextLabel(lead)} as sent`"
                 icon="i-lucide-send"
                 size="sm"
                 :loading="busy === lead.id"
-                @click="act(lead.id, 'sent', {}, `${lead.business_id.name}: ${stepName(sentSteps(lead).length).toLowerCase()} recorded`)"
+                @click="act(lead.id, 'sent', { channel: channelFor(lead) }, `${lead.business_id.name}: ${nextLabel(lead)} recorded`)"
               />
               <template v-if="view === 'sent'">
                 <UDropdownMenu :items="REPLY_CLASSES.map(c => ({ label: REPLY_LABEL[c], onSelect: () => act(lead.id, 'reply', { classification: c }, `${lead.business_id.name}: reply logged`) }))">

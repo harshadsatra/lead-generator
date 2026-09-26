@@ -45,6 +45,7 @@ and rework the offer or segment (spec § Spend gates).
 | Cross-country compliance (27 Sep) | Harshad chose **no country restrictions** and no legal review, overriding the spec's "review before EU/US leads" trigger. The spec's basics still apply to every email: real identity, postal address, one-click opt-out, permanent suppression. |
 | Discovery before the gate (27 Sep) | Harshad asked to build the campaign screen, Google Places scan and Enricher v0 before Phase 0 finishes, because external exports lacked URLs and emails. Paid lookups (Hunter), email verification, LLM and sending stay gated. |
 | Chain filter (27 Sep) | Leads whose listed website is a branch page on a chain's site (`/estate-agents/<area>`, `/our-branches/<x>`, `/our-offices/<x>` …) are archived as "chain branch" with the path as evidence. |
+| Assisted WhatsApp (27 Sep) | Best-fit leads (no/broken website) rarely publish an email, so To send/Sent cards with a phone get a WhatsApp button: opens wa.me with a drafted message (sender, business, top issue, service, STOP opt-out); Harshad reviews and sends by hand. Sends record their channel. Use a separate business number; low volume. |
 | Access | One `LE` role per user (or Directus admin); per-campaign manager/closer via `le_campaign_members`. Keep it simple: internal tool. |
 
 ## Open questions (ask Harshad; don't guess)
