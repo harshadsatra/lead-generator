@@ -13,7 +13,8 @@ async function get(url: string) {
 
 interface Psi { score: number | null, lcpMs: number | null, cls: number | null, error?: string }
 
-// Quota, rate-limit, Google-side and network failures: retry later rather than score without speed data.
+// Any PageSpeed failure (bad key, quota, Google outage, network) leaves the lead for retry,
+// except Lighthouse failing to load the page, which is a real finding about the site.
 export class RetryableAuditError extends Error {}
 
 async function psi(url: string, strategy: 'mobile' | 'desktop'): Promise<Psi> {
@@ -26,8 +27,8 @@ async function psi(url: string, strategy: 'mobile' | 'desktop'): Promise<Psi> {
       lighthouseResult?: { categories: { performance: { score: number | null } }, audits: Record<string, { numericValue?: number }> }
     }
     const message = json.error?.message ?? `HTTP ${res.status}`
-    if (res.status === 429 || res.status >= 500 || /quota/i.test(message)) throw new RetryableAuditError(`PageSpeed: ${message}`)
-    if (!res.ok || !json.lighthouseResult) return { score: null, lcpMs: null, cls: null, error: message }
+    if (/Lighthouse returned error/i.test(message)) return { score: null, lcpMs: null, cls: null, error: message }
+    if (!res.ok || !json.lighthouseResult) throw new RetryableAuditError(`PageSpeed: ${message}`)
     const lr = json.lighthouseResult
     const score = lr.categories.performance.score
     const lcp = lr.audits['largest-contentful-paint']?.numericValue
