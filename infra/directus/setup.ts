@@ -253,7 +253,8 @@ const COLLECTIONS: Record<string, C> = {
       llm_cap_per_lead_inr: { type: 'float', default: 5 },
       default_offer_mode: { type: 'string', default: 'ask_per_lead' },
       default_owner: ref(USERS),
-      emergency_stop: { type: 'boolean', default: false }
+      emergency_stop: { type: 'boolean', default: false },
+      min_reviews: { type: 'integer', default: 10, note: 'Fewer Google reviews = archived as too small (null review count is not penalised)' }
     }
   }
 }

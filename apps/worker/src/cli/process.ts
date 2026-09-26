@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util'
 import { scoreLead } from '@lead/shared'
 import { api, one, q, transition, type Lead } from '../lib/db'
 import { auditSite } from '../agents/auditor'
-import { scoreFacts } from '../agents/analyser'
+import { route, scoreFacts } from '../agents/analyser'
 import type { Metrics } from '../agents/audit-checks'
 
 const ACTOR = 'auditor'
@@ -48,7 +48,7 @@ async function audit(lead: Row): Promise<AuditRow> {
   return { metrics, issues }
 }
 
-async function processLead(lead: Row, segment: Segment) {
+async function processLead(lead: Row, segment: Segment, minReviews: number | null) {
   let result: AuditRow | undefined
   if (lead.state === 'enriched') {
     result = await audit(lead)
@@ -66,15 +66,16 @@ async function processLead(lead: Row, segment: Segment) {
   }))
   const plan = { hook: result.issues[0]?.text ?? null, issues: result.issues, service: segment.service, case_study: segment.case_studies }
   await transition(lead, 'scored', 'analyser', `score ${score}`, { score, band, score_breakdown: breakdown, segment_id: segment.id, plan })
-  if (band === 'archived') await transition(lead, 'archived', 'analyser', `score ${score} < 50`, { closed_reason: `score ${score} < 50` })
-  else await transition(lead, 'awaiting_approval', 'analyser', `${band} lead, score ${score}`)
-  return { score, band }
+  const next = route(score, band, lead.business_id.review_count, minReviews)
+  await transition(lead, next.to, 'analyser', next.reason, next.to === 'archived' ? { closed_reason: next.reason } : {})
+  return { score, band: next.to === 'archived' ? 'archived' : band }
 }
 
 async function main() {
   const campaign = await one<{ id: string, segment_id: Segment | null }>('le_campaigns', { name: { _eq: values.campaign } }, 'id,segment_id.id,segment_id.service,segment_id.case_studies')
   if (!campaign) throw new Error(`Campaign "${values.campaign}" not found`)
   if (!campaign.segment_id) throw new Error(`Campaign "${values.campaign}" has no segment`)
+  const config = await api<{ min_reviews: number | null }>('GET', '/items/le_global_config?fields=min_reviews')
   const leads = await api<Row[]>('GET', `/items/le_leads?limit=-1&fields=id,state,business_id.id,business_id.name,business_id.domain,business_id.review_count,primary_contact_id.verified_status&filter=${q({ _and: [{ campaign_id: { _eq: campaign.id } }, { state: { _in: ['enriched', 'audited'] } }] })}`)
   console.log(`${leads.length} leads to audit/score in "${values.campaign}"${process.env.PAGESPEED_API_KEY ? '' : ' (no PAGESPEED_API_KEY: Google may rate-limit)'}`)
 
@@ -83,7 +84,7 @@ async function main() {
   const worker = async () => {
     for (let lead = queue.shift(); lead; lead = queue.shift()) {
       try {
-        const { score, band } = await processLead(lead, campaign.segment_id!)
+        const { score, band } = await processLead(lead, campaign.segment_id!, config.min_reviews)
         tally[band] = (tally[band] ?? 0) + 1
         console.log(`  ${band.padEnd(8)} ${String(score).padStart(3)}  ${lead.business_id.name}`)
       } catch (err) {

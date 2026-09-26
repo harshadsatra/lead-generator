@@ -40,6 +40,7 @@ and rework the offer or segment (spec § Spend gates).
 | Cold sending in phase 1 | Gmail API on the dedicated Workspace mailbox (the spec's Decisions table). The roadmap row saying "sending via bought tool" is treated as superseded. |
 | Tracking | Markdown checklists in `docs/plans/`. |
 | Phase 0 helper | Build CSV import + audit + score + read-only inbox before the gate, to speed up Phase 0. No LLM, paid APIs or sending until the gate passes. |
+| Too-small filter | Leads with fewer than `le_global_config.min_reviews` Google reviews (default 10) are archived as too small; unknown review counts are not penalised. Default chosen by Claude, tune in Directus. |
 | Access | One `LE` role per user (or Directus admin); per-campaign manager/closer via `le_campaign_members`. Keep it simple: internal tool. |
 
 ## Open questions (ask Harshad; don't guess)

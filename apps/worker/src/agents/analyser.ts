@@ -30,3 +30,11 @@ export function scoreFacts(input: {
     newestSignalAgeDays: input.signalFoundAt ? Math.floor((now.getTime() - new Date(input.signalFoundAt).getTime()) / 86_400_000) : null
   }
 }
+
+export function route(score: number, band: string, reviewCount: number | null, minReviews: number | null) {
+  if (reviewCount !== null && minReviews !== null && reviewCount < minReviews) {
+    return { to: 'archived' as const, reason: `too small: ${reviewCount} reviews < ${minReviews}` }
+  }
+  if (band === 'archived') return { to: 'archived' as const, reason: `score ${score} < 50` }
+  return { to: 'awaiting_approval' as const, reason: `${band} lead, score ${score}` }
+}
