@@ -78,10 +78,10 @@ show Harshad the output before the first real run.
 
 ## 6. Shared core (tested, pure code)
 
-- [ ] Lead state machine in `packages/shared`: allowed transitions exactly as in the spec diagram; illegal transitions throw
+- [x] Lead state machine in `packages/shared`: allowed transitions exactly as in the spec diagram; illegal transitions throw
 - [ ] `transition(lead, to, actor, reason)` in the worker: one Directus PATCH on `le_leads` with a nested `events` create (atomic)
-- [ ] Scoring rubric as a pure function: facts → per-factor breakdown → score → band (70+/50–69/<50)
-- [ ] Tests for both: every allowed and disallowed transition; rubric edge cases (69/70, 49/50)
+- [x] Scoring rubric as a pure function: facts → per-factor breakdown → score → band (70+/50–69/<50)
+- [x] Tests for both: every allowed and disallowed transition; rubric edge cases (69/70, 49/50)
 
 ## 7. Production stack (ready, not live)
 
