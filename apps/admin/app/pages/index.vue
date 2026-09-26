@@ -189,6 +189,16 @@ const psiColor = (n: number | null) => (n === null ? 'neutral' : n < 50 ? 'error
               <UBadge v-else color="error" variant="soft">
                 No website
               </UBadge>
+              <UButton
+                v-if="lead.business_id.gbp_place_id"
+                :to="`https://www.google.com/maps/place/?q=place_id:${lead.business_id.gbp_place_id}`"
+                target="_blank"
+                icon="i-lucide-map-pin"
+                size="xs"
+                variant="soft"
+                color="neutral"
+                label="Google profile"
+              />
               <UBadge v-if="lead.audit?.psi_mobile != null" :color="psiColor(lead.audit.psi_mobile)" variant="soft">
                 Mobile {{ lead.audit.psi_mobile }}
               </UBadge>
