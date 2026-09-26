@@ -15,6 +15,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     directusUrl: 'https://cms.shwezstudio.in',
+    // dev reads GOOGLE_PLACES_API_KEY from the repo .env; in production set NUXT_GOOGLE_PLACES_API_KEY
+    googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY ?? '',
     session: {
       maxAge: 60 * 60 * 24 * 7
     }

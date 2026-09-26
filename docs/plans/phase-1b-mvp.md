@@ -19,6 +19,10 @@ yet; each step is a plain function that pg-boss wraps later.
 - [x] Too-small filter: `le_global_config.min_reviews` (default 10)
 - [x] Gate 1 in the inbox: Approve with offer picker (mockup only for hot, enforced server-side), Reject with one-tap reason, Approved tab as the Phase 0 send list. Every decision logs an event with the user's email
 - [x] Phase 0 tracking in the inbox: tabs Awaiting → To send → Sent → Outcomes → Archived; Mark as sent (first email + up to `max_follow_ups`), Log reply (7 spec classes; unsubscribe → hashed suppression, bounce → contact invalid), Close no-response; stats bar with sent / reply / positive / bounce % and the 2% gate badge
+- [x] Campaign screen (27 Sep): list + New campaign (segment, country, search query, up to 20 areas, test flag); campaign page with Preview (1 Places search), Launch / Scan again, Pause / Resume, per-stage counts
+- [x] Google Places scanner (Text Search, 3 pages per area, 30-day per-campaign skip, closed businesses dropped) via shared `addCandidate()` (same dedupe/suppression as import)
+- [x] Enricher v0: email the business publishes on its own site (homepage + up to 2 contact/about pages), provenance URL stored, suppression checked; no Hunter/verification yet
+- [x] `pnpm le:worker`: polls every 30 s, runs scans and the discovered → awaiting/archived pipeline
 - [ ] Harshad test: import 5–10 real leads; check 2–3 audits against pagespeed.web.dev by hand
 
 Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reacher, LLM agents, approve/send.
