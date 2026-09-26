@@ -23,6 +23,7 @@ export interface CandidateContext {
   campaignId: string
   country: string
   source: string
+  signalType?: string
   foundAt: string
 }
 
@@ -76,7 +77,7 @@ export async function addCandidate(c: Candidate, ctx: CandidateContext): Promise
   }
 
   await api('POST', '/items/le_signals', {
-    business_id: business!.id, source: ctx.source, source_url: c.sourceUrl, signal_type: ctx.source,
+    business_id: business!.id, source: ctx.source, source_url: c.sourceUrl, signal_type: ctx.signalType ?? ctx.source,
     raw: { ...c.raw, _website: site.url, _social_only: site.socialOnly, _chain_branch: chainBranchPath(site.url) }, found_at: ctx.foundAt
   })
   let contactId: string | null = null

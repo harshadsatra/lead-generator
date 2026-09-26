@@ -65,17 +65,18 @@ export async function processLead(lead: Row, segment: Segment, minReviews: numbe
   }
   result ??= await latestAudit(lead.business_id.id) ?? await audit(lead)
 
-  const signal = await one<{ found_at: string, raw: { _chain_branch?: string | null } | null }>('le_signals', { business_id: { _eq: lead.business_id.id } }, 'found_at,raw')
+  const signals = await api<{ found_at: string, signal_type: string | null, raw: { _chain_branch?: string | null } | null }[]>('GET', `/items/le_signals?limit=-1&fields=found_at,signal_type,raw&sort=-found_at&filter=${q({ business_id: { _eq: lead.business_id.id } })}`)
   const { score, band, breakdown } = scoreLead(scoreFacts({
     metrics: result.metrics,
     reviewCount: lead.business_id.review_count,
     segmentHasCaseStudy: !!segment.case_studies,
     contactVerified: lead.primary_contact_id?.verified_status === 'valid',
-    signalFoundAt: signal?.found_at ?? null
+    signalFoundAt: signals[0]?.found_at ?? null,
+    intentSignals: signals.some(s => s.signal_type === 'funding') ? ['funding'] : []
   }))
   const plan = { hook: result.issues[0]?.text ?? null, issues: result.issues, service: segment.service, case_study: segment.case_studies }
   await transition(lead, 'scored', 'analyser', `score ${score}`, { score, band, score_breakdown: breakdown, segment_id: segment.id, plan })
-  const next = route(score, band, lead.business_id.review_count, minReviews, signal?.raw?._chain_branch ?? null)
+  const next = route(score, band, lead.business_id.review_count, minReviews, signals.find(s => s.raw?._chain_branch)?.raw?._chain_branch ?? null)
   await transition(lead, next.to, 'analyser', next.reason, next.to === 'archived' ? { closed_reason: next.reason } : {})
   return { score, band: next.to === 'archived' ? 'archived' : band }
 }

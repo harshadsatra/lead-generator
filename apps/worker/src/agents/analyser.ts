@@ -1,4 +1,4 @@
-import type { ScoreFacts } from '@lead/shared'
+import type { IntentSignal, ScoreFacts } from '@lead/shared'
 import type { Metrics } from './audit-checks'
 
 // Rule-based facts only (no LLM yet): intent/size signals beyond review count arrive with later scanners.
@@ -8,6 +8,7 @@ export function scoreFacts(input: {
   segmentHasCaseStudy: boolean
   contactVerified: boolean
   signalFoundAt: string | null
+  intentSignals?: IntentSignal[]
   now?: Date
 }): ScoreFacts {
   const m = input.metrics
@@ -18,7 +19,7 @@ export function scoreFacts(input: {
     hasSsl: m.hasSsl,
     brokenForms: false,
     outdatedCms: m.outdatedCms,
-    intentSignals: [],
+    intentSignals: input.intentSignals ?? [],
     reviewCount: input.reviewCount ?? 0,
     multipleLocations: false,
     activeAds: false,

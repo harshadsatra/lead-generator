@@ -238,6 +238,22 @@ const COLLECTIONS: Record<string, C> = {
       ...created
     }
   },
+  le_posts: {
+    icon: 'forum', note: 'Community posts to answer by hand (Reddit); not leads',
+    fields: {
+      source: { type: 'string', required: true, default: 'reddit' },
+      external_id: { type: 'string', required: true, unique: true },
+      url: { type: 'text', required: true },
+      title: { type: 'string', required: true },
+      body: { type: 'text' },
+      author: { type: 'string' },
+      community: { type: 'string' },
+      posted_at: { type: 'timestamp' },
+      matched: { type: 'string', note: 'Watch phrase that matched' },
+      status: { type: 'string', required: true, default: 'new', note: 'new | replied | dismissed' },
+      ...created
+    }
+  },
   le_global_config: {
     icon: 'tune', note: 'Global defaults and hard limits', singleton: true,
     fields: {
@@ -255,6 +271,7 @@ const COLLECTIONS: Record<string, C> = {
       default_offer_mode: { type: 'string', default: 'ask_per_lead' },
       default_owner: ref(USERS),
       emergency_stop: { type: 'boolean', default: false },
+      reddit_watch: { type: 'json', note: '{ subreddits: string[], phrases: string[] } searched by the worker' },
       min_reviews: { type: 'integer', default: 10, note: 'Fewer Google reviews = archived as too small (null review count is not penalised)' }
     }
   }
@@ -288,6 +305,7 @@ const ROLES: { name: string, app: boolean, grants: Grant }[] = [
       le_replies: ['create', 'read', 'update'],
       le_contacts: ['read', 'update'],
       le_segments: ['create', 'read', 'update'],
+      le_posts: ['read', 'update'],
       le_events: ['create', 'read'],
       le_suppression: ['create', 'read']
     }
@@ -297,7 +315,7 @@ const ROLES: { name: string, app: boolean, grants: Grant }[] = [
     grants: {
       le_campaigns: ['read'], le_businesses: ['read'], le_signals: ['read'], le_contacts: ['read', 'update'],
       le_audits: ['read'], le_leads: ['read', 'update'], le_messages: ['create', 'read'],
-      le_replies: ['create', 'read', 'update'], le_events: ['create', 'read'], le_suppression: ['create']
+      le_replies: ['create', 'read', 'update'], le_events: ['create', 'read'], le_suppression: ['create'], le_posts: ['read', 'update']
     }
   }
 ]
@@ -312,6 +330,11 @@ const SEGMENTS = [
   ['Startups (seed to Series A)', 'Funding news, hiring web devs, outdated landing page', 'SaaS/full-stack, landing pages', 'SaaS, DocuX'],
   ['Edtech and coaching institutes', 'Old WordPress, no online enrolment', 'Web app, LMS, payments', 'Edtech projects']
 ].map(([name, signals, service, case_studies]) => ({ name, signals, service, case_studies }))
+
+const REDDIT_WATCH = {
+  subreddits: ['forhire', 'smallbusiness', 'Entrepreneur', 'IndianStartups', 'india', 'mumbai', 'bangalore', 'pune', 'london', 'UKBusiness'],
+  phrases: ['need a website', 'looking for a web developer', 'website developer', 'website designer', 'build my website', 'shopify developer', 'redesign my website']
+}
 
 const GLOBAL_CONFIG = {
   cadence_days: [0, 3, 7, 14],
@@ -464,6 +487,9 @@ async function main() {
   }
   if (!collections.has('le_global_config') || (await api<Record<string, unknown> | null>('GET', '/items/le_global_config'))?.cadence_days == null) {
     await write('seed le_global_config defaults', 'PATCH', '/items/le_global_config', GLOBAL_CONFIG)
+  }
+  if (!fields.has('le_global_config.reddit_watch') || (await api<{ reddit_watch: unknown } | null>('GET', '/items/le_global_config?fields=reddit_watch'))?.reddit_watch == null) {
+    await write('seed le_global_config.reddit_watch', 'PATCH', '/items/le_global_config', { reddit_watch: REDDIT_WATCH })
   }
 
   const perms = plan.filter(p => p.startsWith('  perm')).length
