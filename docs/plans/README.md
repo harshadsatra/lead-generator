@@ -9,8 +9,8 @@ These files track **progress**. Tick `[x]` in the same commit as the work.
 | --- | --- | --- |
 | [Phase 0 — Validate (manual)](phase-0-validate.md) | None | Not started |
 | [Phase 1a — Foundation](phase-1a-foundation.md) | None (runs in parallel with Phase 0) | Done |
-| [Phase 1b — MVP agents + UI](phase-1b-mvp.md) | §0 Phase 0 helper: none. Rest: Phase 0 exit test passed | §0 in progress, rest blocked |
-| [Phase 2 — Close the loop](phase-2-close-loop.md) | Phase 1 exit test passed | Blocked |
+| [Phase 1b — MVP agents + UI](phase-1b-mvp.md) | §0 Phase 0 helper: none. Rest: Phase 0 exit test passed | §0 built (Harshad test pending), rest blocked |
+| [Phase 2 — Close the loop](phase-2-close-loop.md) | Phase 1 exit test passed | Blocked (Reddit + startup news built early) |
 | [Phase 3 — Expand](phase-3-expand.md) | Phase 2 exit test passed | Blocked |
 | Phase 4 — Productize | 2 quarters of data, 3+ projects won | Not planned yet |
 
@@ -35,11 +35,11 @@ and rework the offer or segment (spec § Spend gates).
 | Repo | One pnpm monorepo: `apps/admin` (Nuxt 4), `apps/worker` (TS agents), `packages/shared` (Zod schemas, types, state machine), `infra/` (Compose, Directus snapshot). |
 | Hosting | Existing Contabo VPS. |
 | Directus | Use the existing shared instance at cms.shwezstudio.in, for local dev too. Isolation: `le_` collection prefix, "Lead Engine" folder, `LE` roles scoped to `le_*`, create-only setup script, never `schema apply`. |
-| Queue | pg-boss in a separate `lead_queue` database on the Directus Postgres; SSH tunnel in dev. |
+| Queue | Planned: pg-boss in a separate `lead_queue` database on the Directus Postgres. Today: `le:worker` polls Directus every 30 s (enough until sending/follow-ups need scheduling). |
 | Test data | `is_test` flag on campaigns: never sends live, removed by a cleanup script. |
 | Cold sending in phase 1 | Gmail API on the dedicated Workspace mailbox (the spec's Decisions table). The roadmap row saying "sending via bought tool" is treated as superseded. |
 | Tracking | Markdown checklists in `docs/plans/`. |
-| Phase 0 helper | Build CSV import + audit + score + read-only inbox before the gate, to speed up Phase 0. No LLM, paid APIs or sending until the gate passes. |
+| Phase 0 helper | Build import + audit + score + inbox before the gate, to speed up Phase 0. Later approvals added discovery, WhatsApp, sources and the area picker (rows below). No LLM or automated sending until the gate passes. |
 | Too-small filter | Leads with fewer than `le_global_config.min_reviews` Google reviews (default 10) are archived as too small; unknown review counts are not penalised. Default chosen by Claude, tune in Directus. |
 | Markets (27 Sep) | Leads can be global. Phase 0 validates the **UK** first; each later market gets its own small validation run. Every business stores its ISO country; phones are stored E.164. |
 | Cross-country compliance (27 Sep) | Harshad chose **no country restrictions** and no legal review, overriding the spec's "review before EU/US leads" trigger. The spec's basics still apply to every email: real identity, postal address, one-click opt-out, permanent suppression. |
@@ -52,9 +52,12 @@ and rework the offer or segment (spec § Spend gates).
 
 ## Open questions (ask Harshad; don't guess)
 
-- [ ] Address and domain of the dedicated cold mailbox (spec, before Phase 0).
-- [ ] A sample Mantis CSV export (or your own sheet), to check the import columns.
-- [ ] Free PageSpeed Insights API key (`PAGESPEED_API_KEY`): Google Cloud → enable "PageSpeed Insights API" → create API key. Without one, Google allows only a few audits.
-- [ ] Scoring partial credit (`packages/shared/src/rubric.ts`, `FACTORS`): the spec gives weights but not partial credit, e.g. PSI mobile < 40 = half of Need, 20–49 reviews = a quarter of Size. Review before Phase 1b.
-- [ ] State machine gaps, interim choices (27 Sep, revisit in Phase 2): referral → handed to closer (closer adds the referred contact); bounce → closed_lost + contact invalid; later / out of office → back in sequence. Still open: a lead where the Enricher finds no contact at all.
-- [ ] Phase 0 lead source: Mantis's free tier gives only about 20 leads with contacts. Buy Mantis (₹3,499), buy LeadSweep Starter ($39), or pull the other 30 by hand?
+- [ ] **Phase 0 market**: UK (decided 27 Sep) or India? The first real campaign ("Test 1") is Mumbai; the 2% gate is measured per market.
+- [ ] Address and domain of the dedicated cold mailbox (spec, before Phase 0), plus SPF/DKIM/DMARC and the privacy notice page.
+- [ ] Scoring partial credit (`packages/shared/src/rubric.ts`, `FACTORS`): the spec gives weights but not partial credit, e.g. PSI mobile < 40 = half of Need, 20–49 reviews = a quarter of Size. Review with real results.
+- [ ] State machine gaps, interim choices (27 Sep, revisit in Phase 2): referral → handed to closer (closer adds the referred contact); bounce → closed_lost + contact invalid; later / out of office → back in sequence. Still open: a lead where the Enricher finds no contact at all (today it is scored and can be approved with no way to reach it).
+- [ ] Rotate the Directus admin token and the `+leads` password (both were pasted in chat); update `.env`.
+- [ ] Directus: set a real first name on the account (WhatsApp drafts say "this is Shwez"); fill `le_global_config` → Default owner and Monthly LLM budget.
+- [ ] Optional keys: `NUXT_PUBLIC_GOOGLE_MAPS_KEY` (map picker; Maps JavaScript API, referrer-restricted) and Reddit app credentials (after checking Reddit's Data API terms).
+- [x] PageSpeed key (`PAGESPEED_API_KEY`), set 27 Sep; also used for Places (`GOOGLE_PLACES_API_KEY`).
+- [x] Phase 0 lead source / Mantis sample: superseded by the Google Maps campaign scan (27 Sep).

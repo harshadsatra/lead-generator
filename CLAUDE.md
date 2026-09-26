@@ -28,10 +28,10 @@ pnpm --filter @lead/shared exec tsx --test src/<file>.test.ts  # single test fil
 
 ## Layout
 
-- `apps/admin`: Nuxt 4 + Nuxt UI v4, from the `nuxt-ui-templates/dashboard` template (demo stripped; Phase 1 screens: Approval inbox `/`, Campaigns `/campaigns`; Team + Settings live in Directus). Talks to Directus only from Nuxt server routes (no CORS changes on the shared instance). Login: `server/api/auth/*` → Directus `/auth/login`, session via `nuxt-auth-utils` (Directus tokens in the server-only `secure` part), gatekeeping by `canUseLeadEngine` in `packages/shared/src/access.ts`, global route middleware `app/middleware/auth.global.ts`. Dev reads the repo-root `.env` through the symlink `apps/admin/.env` → `../../.env` (recreate it after a fresh clone: `ln -s ../../.env apps/admin/.env`). `h3@^1` is a devDep only so Nuxt types resolve to the h3 that actually runs.
-- `apps/worker`: one Node 22 TS service that runs every agent. Reads and writes data through the Directus REST API (`DIRECTUS_TOKEN`, scoped to `le_*`). Jobs run on pg-boss in the separate `lead_queue` Postgres database (SSH tunnel in dev). Run with `tsx`, no build step.
-- `packages/shared`: Zod enums/schemas, lead state machine, scoring rubric. Consumed as TS source (`exports` → `src/index.ts`).
-- `infra/`: production Compose file (worker, reacher, admin) and `infra/directus/setup.ts`, the create-only schema script.
+- `apps/admin`: Nuxt 4 + Nuxt UI v4, from the `nuxt-ui-templates/dashboard` template (demo stripped; screens: Approval inbox `/`, Campaigns `/campaigns` + `/campaigns/[id]`, Segments `/segments`, Reddit `/reddit`; Team + Settings live in Directus). Talks to Directus only from Nuxt server routes (no CORS changes on the shared instance). Login: `server/api/auth/*` → Directus `/auth/login`, session via `nuxt-auth-utils` (Directus tokens in the server-only `secure` part), gatekeeping by `canUseLeadEngine` in `packages/shared/src/access.ts`, global route middleware `app/middleware/auth.global.ts`. Dev reads the repo-root `.env` through the symlink `apps/admin/.env` → `../../.env` (recreate it after a fresh clone: `ln -s ../../.env apps/admin/.env`). `h3@^1` is a devDep only so Nuxt types resolve to the h3 that actually runs.
+- `apps/worker`: one Node 22 TS service that runs every agent. Reads and writes data through the Directus REST API (`DIRECTUS_TOKEN`, scoped to `le_*`). `src/index.ts` polls every 30 s (pg-boss in a separate `lead_queue` database is planned); `src/pipeline.ts` runs discovered → awaiting/archived; scanners and agents in `src/agents/`. Run with `tsx`, no build step; restart after code changes.
+- `packages/shared`: Zod enums, lead state machine, scoring rubric, Gate 1 / reply rules (`decision.ts`), phone rules (`phone.ts`), WhatsApp drafts (`outreach.ts`). Node-only entries: `@lead/shared/directus`, `@lead/shared/places`, `@lead/shared/hash`. Consumed as TS source.
+- `infra/directus/`: `setup.ts` (create-only schema/roles/seed, guarded + tested) and `cleanup-test.ts`. The production Compose file comes with deployment.
 
 **Directus is the shared production instance at https://cms.shwezstudio.in, for local dev too.** Other projects' data lives there. Every lead-engine collection is `le_*` (spec table names get the prefix, e.g. spec `leads` → `le_leads`), sits in the "Lead Engine" folder, and is accessible only to the `LE Admin` / `LE Campaign manager` / `LE Closer` / `LE Worker` roles.
 
@@ -51,7 +51,7 @@ Pipeline (spec § System architecture): Scanner plugins → dedupe → Enricher 
 - create, alter or delete any Directus collection, field, role, flow or setting that isn't `le_*` / `LE *`. Schema changes go through `infra/directus/setup.ts` (create-only, `--dry-run` first, output shown to Harshad).
 - delete data in Directus except through `pnpm le:cleanup-test` (only `is_test` campaigns) or with Harshad's explicit OK.
 - send real email outside `SEND_MODE=live`, which only Harshad sets. Dev uses `dry_run`, tests use `allowlist`. `is_test` campaigns never send live.
-- start Phase 1b work before the Phase 0 gate passes, except §0 (Phase 0 helper: import, audit, score, read-only inbox; no LLM, paid APIs or sending).
+- start Phase 1b work before the Phase 0 gate passes, except §0 and the items Harshad approved in README → Decisions. Still gated: LLM agents, email verification, automated sending.
 - build automated DMs for LinkedIn/Instagram/X, or scrape Google Maps or LinkedIn (spec § Non-goals, § Avoid).
 - commit `.env` or secrets. Add new variables to `.env.example` by name only.
 

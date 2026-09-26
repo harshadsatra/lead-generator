@@ -1,6 +1,6 @@
 # Phase 2 — Close the loop (weeks 7–9)
 
-**Blocked until the Phase 1 exit test passes.**
+**Blocked until the Phase 1 exit test passes**, except the two discovery sources built early (27 Sep, README → Decisions).
 **Exit test:** 4 discovery calls booked in a month.
 
 ## Reply handling
@@ -9,7 +9,7 @@
 - [ ] Reply Classifier (Haiku 4.5): 7 classes per spec § Agent specs 6, each with its action
 - [ ] Confidence < 0.8 → admin queue, never auto-actioned (tested)
 - [ ] Referral → new lead in `awaiting_approval`; OOO → pause until return date; later → reminder (default 90 days)
-- [ ] Unsubscribe/angry → suppress permanently (tested end to end)
+- [ ] Unsubscribe/angry → suppress permanently: works for **manually logged** replies (tested end to end); automatic once the classifier exists
 
 ## Sequences
 
@@ -32,9 +32,9 @@
 
 ## More discovery
 
-- [ ] Reddit scanner (official API)
+- [x] Reddit scanner (official API, application-only OAuth): watch list in `le_global_config.reddit_watch`, posts → `le_posts` → Reddit page (Open thread / Mark replied / Dismiss). **Not connected yet**: needs `REDDIT_CLIENT_ID/SECRET/USERNAME`; check Reddit's Data API terms
 - [ ] Job boards scanner (RSS/APIs where allowed)
-- [ ] Startup news scanner (Inc42, YourStory RSS)
+- [x] Startup news scanner (Inc42 + YourStory RSS, every 6 h): funding headline → company → whole-word Google Maps match → lead with `funding` intent. Verified on live feeds
 - [ ] Territory monitor: weekly re-scan of saved areas, new businesses only (`territories` table)
 
 ## Autonomy and compliance

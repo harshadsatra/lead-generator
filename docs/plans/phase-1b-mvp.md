@@ -1,87 +1,91 @@
 # Phase 1b — MVP agents and UI (weeks 3–6)
 
-§0 (the Phase 0 helper) was approved to run before the gate (26 Sep).
-**Everything from § Prep onward stays blocked until the Phase 0 gate passes** (see README → Gate results).
+§0 (the Phase 0 helper) and the extra items listed in README → Decisions were
+approved to run before the gate. **Everything else here stays blocked until the
+Phase 0 gate passes** (see README → Gate results).
 
 **Exit test:** 25 approved leads/week, bounce < 2%, admin review < 20 min/day.
 
-## 0. Phase 0 helper (runs now; no LLM, no paid APIs, no sending)
+Verified 27 Sep 2026: `pnpm test` (38 tests), `pnpm typecheck`, `pnpm lint` all clean;
+`pnpm le:setup` reports 0 pending writes; no test data left.
 
-Harshad imports the Phase 0 leads, the tool audits and scores them, and he
-writes the 50 emails by hand from the results. Runs as a CLI, with no job queue
-yet; each step is a plain function that pg-boss wraps later.
+## 0. Phase 0 helper (built before the gate; no LLM, no automated sending)
+
+Discovery, audit, scoring and manual outreach tracking, so Harshad can run the
+50 Phase 0 sends from the tool. The worker is a 30 s polling loop, not pg-boss yet.
 
 - [x] Worker Directus client (`LE Worker` token) + `transition()`: one PATCH on `le_leads` with a nested `events` create
-- [x] CSV import: `pnpm le:import <file.csv> --campaign "<name>" --segment "<segment>" [--test]`. Tolerant headers (Mantis export, own sheet); dedupe on domain → phone → name+city; skip businesses active in another campaign; provenance (source, source_url, found_at); CSV email stored as an unverified contact. State: discovered → enriched
-- [x] Auditor v0 (no new dependencies): PSI mobile + desktop (score, LCP, CLS), SSL, mobile viewport, no working site (unreachable, parked, under construction, Facebook/Instagram-only, soft 404), contact form present, CMS (WordPress + version, WooCommerce, Shopify, Wix, Squarespace). Top 3 plain-language issues, each tied to a metric key. State → audited
-- [x] Scoring from audit + CSV facts with the rubric → `scored` → `awaiting_approval` (50+) or `archived` (<50, with reason)
-- [x] Admin: Directus fetch helper with access-token refresh; Approval inbox lists `awaiting_approval` leads for a chosen campaign (business, score/band, top issues, PSI, site link), read-only
-- [x] Too-small filter: `le_global_config.min_reviews` (default 10)
-- [x] Gate 1 in the inbox: Approve with offer picker (mockup only for hot, enforced server-side), Reject with one-tap reason, Approved tab as the Phase 0 send list. Every decision logs an event with the user's email
-- [x] Phase 0 tracking in the inbox: tabs Awaiting → To send → Sent → Outcomes → Archived; Mark as sent (first email + up to `max_follow_ups`), Log reply (7 spec classes; unsubscribe → hashed suppression, bounce → contact invalid), Close no-response; stats bar with sent / reply / positive / bounce % and the 2% gate badge
-- [x] Campaign screen (27 Sep): list + New campaign (segment, country, search query, up to 20 areas, test flag); campaign page with Preview (1 Places search), Launch / Scan again, Pause / Resume, per-stage counts
-- [x] Google Places scanner (Text Search, 3 pages per area, 30-day per-campaign skip, closed businesses dropped) via shared `addCandidate()` (same dedupe/suppression as import)
-- [x] Enricher v0: email the business publishes on its own site (homepage + up to 2 contact/about pages), provenance URL stored, suppression checked; no Hunter/verification yet
-- [x] `pnpm le:worker`: polls every 30 s, runs scans and the discovered → awaiting/archived pipeline
-- [ ] Harshad test: import 5–10 real leads; check 2–3 audits against pagespeed.web.dev by hand
+- [x] CSV import: `pnpm le:import <file.csv> --country GB --campaign "<name>" [--segment "<segment>"] [--test]`. Tolerant headers; skips rows that say "has website" but give no URL; leads land in `discovered` for the worker
+- [x] Shared `addCandidate()` (import, Maps, news): dedupe on place id → domain → phone → exact name+city; skip businesses active in another campaign; suppression check; provenance (source, source_url, found_at); E.164 phones per country
+- [x] Google Places scanner: Text Search per area, 3 pages (≤ 60), 30-day per-campaign skip, closed businesses dropped, one bad result doesn't abort the scan; areas are text or map rectangles (`locationRestriction`)
+- [x] Enricher v0: email the business publishes on its own site (homepage, then up to 2 contact/about pages, contact pages first); provenance URL stored; suppression checked. No Hunter / verification yet
+- [x] Auditor v0: PSI mobile + desktop (score, LCP, CLS), SSL, viewport, contact form, CMS (WordPress + version, WooCommerce, Shopify, Wix, Squarespace, Webflow, Joomla), no working site (parked, placeholder, default page, soft 404); top 3 issues each tied to a metric key; 30-day audit reuse
+- [x] Auditor safety: browser user agent; a site is only "broken" if Google's Lighthouse can't load it either; 401/403/429 = blocked, never broken; PageSpeed quota/network errors leave the lead for retry
+- [x] Scoring: rubric from audit + review count + funding signal; routes to `awaiting_approval` or `archived` with reason (score < 50, too small < `min_reviews`, chain branch page)
+- [x] `pnpm le:worker`: scans launched campaigns, runs discovered → enriched → audited → scored → awaiting/archived; `pnpm le:process` for one-off runs
+- [x] Admin inbox: Awaiting → To send → Sent → Outcomes → Archived; Approve with offer (mockup only for hot, server-enforced), Reject with reason; Mark as sent (first + up to `max_follow_ups`, channel recorded); Log reply (7 classes; unsubscribe → hashed suppression, bounce → contact invalid); Close no-response; stats bar with the 2% gate
+- [x] Lead cards: website, Google profile link, PSI, HTTPS, CMS, top issues, contact; assisted WhatsApp button (wa.me with drafted message incl. STOP opt-out) for leads with a phone
+- [x] Campaigns: list, New campaign (source Google Maps / Startup news, segment, country, query, areas via region → city suggestions or map rectangle, test flag), Preview (1 Places search), Launch / Scan again, Pause / Resume, per-stage counts
+- [x] Segments page: create, edit, delete (refused while campaigns use it)
+- [ ] Harshad test: a real campaign end to end; spot-check 2–3 audits against pagespeed.web.dev; click through every tab and button in a browser, desktop and phone width
 
-Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reacher, LLM agents, approve/send.
+Deferred until the gate: screenshots (Playwright), Wappalyzer, Hunter + Reacher, LLM agents, Gmail sending.
 
-## Prep (moved from Phase 1a; do when the job queue or deploy is next)
+## Prep (do when the job queue or deploy is next; Harshad: "after multiple tests")
 
 - [ ] Server audit (read-only), results into `infra/SERVER.md`: `nproc && free -h && df -h`; `docker ps --format '{{.Names}} {{.Image}} {{.Ports}}'`; Postgres container/version and network behind cms.shwezstudio.in; reverse proxy; outbound port 25 (`nc -vz -w 5 gmail-smtp-in.l.google.com 25`); existing Postgres backups
 - [ ] With Harshad's OK: `lead_queue` database + its own DB user on the Directus Postgres; SSH tunnel command for local dev in CLAUDE.md
 - [ ] Confirm the Directus licence covers this use (BSL / Open Innovation Grant)
-- [ ] `infra/docker-compose.yml`: worker, reacher, admin (Directus/Postgres already run); admin subdomain + reverse proxy (ask Harshad for the name)
+- [ ] `infra/docker-compose.yml`: worker, reacher, admin (Directus/Postgres already run); admin subdomain + reverse proxy (ask Harshad for the name); `NUXT_GOOGLE_*`/`NUXT_PUBLIC_*` env in production
 - [ ] Backups include `le_*` tables and `lead_queue`, plus one restore test
 - [ ] If RAM < 8 GB: Playwright concurrency 1 and a VPS upgrade checkpoint
 
 ## 1. Safety rails (before any agent)
 
 - [ ] LLM wrapper (`apps/worker/src/lib/llm.ts`): AI SDK + Anthropic provider, Zod output schemas, writes an `llm_usage` row per call, refuses a call when the lead's spend would pass ₹5 or the monthly budget is exceeded. Haiku 4.5 for filtering/classifying, Sonnet 5 for analysis/drafting
-- [ ] pg-boss setup: queues per agent, retries, `singletonKey` / idempotency keys
-- [ ] Suppression check helper (hash email/phone, check domain), used by the Enricher and the Sender
-- [ ] Emergency stop flag in `global_config`, checked by the Sender before every send
+- [ ] pg-boss setup: queues per agent, retries, `singletonKey` / idempotency keys (replaces the polling loop)
+- [x] Suppression check helper (`isSuppressed`: hashed email/phone, domain), used by import, scans and the Enricher; the Sender must use it too
+- [ ] Emergency stop: flag exists in `le_global_config`; the Sender must check it before every send
 - [ ] Sentry (free tier) for the worker and admin
 - [ ] Tests: cost cap blocks the call; suppressed contact is never returned; emergency stop blocks send
 
 ## 2. Scanners
 
-- [ ] `ScannerPlugin` interface (spec § Agent specs 1)
-- [ ] Dedupe: match on domain, then phone, then fuzzy name + locality; merge signals into one business; skip businesses active in another campaign
-- [ ] **Manual import** plugin: CSV (Phase 0 sheet, Mantis export) + paste URL, stores source URL + scan time
-- [ ] **GBP** plugin: Places API by segment + locality grid; cache each grid cell for 30 days. Test on one locality first; confirm cost with Harshad before a full city
-- [ ] Tests: dedupe cases; every candidate has source URL + time
+- [ ] `ScannerPlugin` interface (spec § Agent specs 1): today scanners are plain functions sharing `addCandidate()`; formalise when a 4th source arrives
+- [ ] Fuzzy name + locality matching in dedupe (exact match today)
+- [x] **Manual import**: CSV (own sheet, Mantis/LeadSweep exports) with source URL + scan time. Paste-a-URL not built
+- [x] **GBP**: Places by campaign query + area (text or map rectangle), 30-day skip per campaign. A shared cross-campaign cache (spec "grid cell") is not built
+- [ ] Tests: dedupe cases (`addCandidate` is only covered by live end-to-end runs, no unit test)
 
 ## 3. Enricher
 
-- [ ] Waterfall: website contact page/footer (Crawlee) → GBP phone → Hunter.io (only if nothing found) → pattern guess → Reacher verify
-- [ ] Only role/published business contacts stored, with `found_via`
+- [ ] Waterfall: ~~Crawlee~~ website contact page/footer (done with plain fetch) → GBP phone (done) → Hunter.io (only if nothing found) → pattern guess → Reacher verify
+- [x] Only published business contacts stored, with `found_via` and `source_url`
 - [ ] Owner name from About/team pages when published
-- [ ] Test: no email is marked usable unless the verifier says "valid"
+- [ ] Test: no email is marked usable unless the verifier says "valid" (all emails are `unknown` today)
 
 ## 4. Auditor
 
-- [ ] PSI API mobile + desktop (score, LCP, CLS)
-- [ ] SSL, viewport, homepage broken links, contact form present + submit test (no real submit)
-- [ ] "No working website": parked, soft 404, under construction, Facebook-only
-- [ ] Stack detection with Wappalyzer fingerprints (CMS, Shopify/Woo, WP/jQuery age)
+- [x] PSI API mobile + desktop (score, LCP, CLS)
+- [ ] SSL, viewport, contact form done; homepage broken links and form submit test not built
+- [x] "No working website": parked, soft 404, under construction, default page, Facebook/Instagram-only
+- [ ] Stack detection with Wappalyzer fingerprints (a simpler CMS check exists)
 - [ ] Mobile + desktop screenshots (Directus files)
-- [ ] Output: 3 headline issues ranked by business impact, each pointing to a stored metric
-- [ ] Skip re-audit if the last audit is under 30 days old
-- [ ] Test: every issue references a metric key that exists in the audit row
+- [x] Output: 3 headline issues ranked by business impact, each pointing to a stored metric
+- [x] Skip re-audit if the last audit is under 30 days old
+- [x] Tests: issue ranking and metric keys; broken-vs-blocked verdict
 
 ## 5. Analyser
 
-- [ ] LLM extracts facts (intent, size signals) into a Zod schema; score comes from the rubric function (Phase 1a), not the model
-- [ ] Plan JSON: recommended service, hook, channel, case study, risks
-- [ ] Bands route: <50 → `archived` with reason; else → `awaiting_approval`
-- [ ] Test: same stored facts → same score; plan cites ≥ 1 audit finding or signal
+- [ ] LLM extracts facts (intent, size signals) into a Zod schema; score comes from the rubric function, not the model
+- [ ] Plan JSON: hook, service and case study are filled by rules today; channel choice and risks need the LLM step
+- [x] Bands route: <50 → `archived` with reason; else → `awaiting_approval` (plus too-small and chain-branch rules)
+- [x] Test: same stored facts → same score
 
 ## 6. Sales Agent (first touch only; follow-ups are Phase 2)
 
 - [ ] Style guide + banned phrases in `templates`
-- [ ] Draft matches the offer (audit PDF / mockup / call only)
+- [ ] Draft matches the offer (audit PDF / mockup / call only). Today: a fixed WhatsApp draft only
 - [ ] Checks in code: < 120 words, ≤ 1 link, no attachment, banned phrases absent, identity + address + opt-out present
 - [ ] Fact check: every number or claim in the draft exists in the lead record; fail → redraft once, then flag
 - [ ] Test: checks reject a bad draft
@@ -100,19 +104,19 @@ Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reache
 
 ## 8. Admin UI (Nuxt)
 
-- [x] Login against Directus (built early, see Phase 1a §4)
-- [x] Server-side Directus fetch helper that refreshes the access token (`directusAsUser`)
+- [x] Login against Directus (admins + `LE` roles only)
+- [x] Server-side Directus fetch helper that refreshes the access token (`directusAsUser`, verified past the 15-minute expiry)
 - [ ] Role-aware nav (Closer sees Hot replies only, etc.)
-- [ ] **Campaigns**: list, new-campaign form (spec § Campaign inputs; city list first, map picker later), pre-flight (sample scan, lead estimate, mailbox capacity, cost estimate), confirm, then Launch/Pause/Resume/Clone/Archive
-- [ ] **Approval inbox**: add screenshot, draft message + Edit, Snooze, A/E/R shortcuts (cards, offer picker, Approve, Reject-with-reason done in §0)
-- [ ] Team + Settings: use Directus Data Studio (no custom screens in phase 1)
-- [ ] Check in a browser, desktop and phone width
+- [ ] **Campaigns**: done except pre-flight lead/cost/mailbox-capacity estimates, Clone and Archive
+- [ ] **Approval inbox**: done except screenshot, draft message + Edit, Snooze, A/E/R shortcuts
+- [x] Team + Settings: Directus Data Studio (sidebar link); Segments has its own page
+- [ ] Check in a browser, desktop and phone width (all UI so far was verified through the API and server-rendered HTML only)
 
 ## 9. Compliance and launch
 
 - [ ] Retention job: delete archived candidates after 90 days
 - [ ] Pre-launch self-review checklist as a campaign launch step: provenance stored, opt-out works end to end, privacy notice live, suppression checked
-- [ ] End-to-end dry run on the Phase 0 CSV: import → enrich → audit → score → approve → dry-run send
+- [ ] End-to-end dry run on real Phase 0 data: scan → enrich → audit → score → approve → dry-run send
 - [ ] Switch to `live` with Harshad's explicit OK; ramp starts at 15/day
 
 ## Done when

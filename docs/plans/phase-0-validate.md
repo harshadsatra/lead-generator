@@ -1,7 +1,8 @@
 # Phase 0 — Validate the offer (manual, weeks 1–2)
 
-Owner: Harshad. No code. The goal is to prove that audit-led cold email gets
-replies **before** paying for the Phase 1b build.
+Owner: Harshad. The goal is to prove that audit-led outreach gets replies
+**before** paying for the rest of the build. The tool now finds, audits and
+scores leads and tracks sends and replies; the sending itself is by hand.
 
 **Exit test:** positive reply rate ≥ 2% on 50 sends (at least 1 positive reply).
 With only 50 sends, one reply is a weak signal. Also read the tone of every
@@ -17,22 +18,23 @@ reply, and write down any "not now" answers.
 - [ ] Send a test to mail-tester.com; score ≥ 9/10
 - [ ] Mailbox signature: real name, Shwez Studio, postal address, and a link to the privacy notice
 
-## Compliance minimum (DPDP)
+## Compliance minimum (DPDP / UK GDPR)
 
 - [ ] Privacy notice page live on shwezstudio.in (covers outreach data, source, opt-out; written so it also works for UK recipients)
 - [ ] Opt-out line in every email ("Reply 'stop' and I won't email again")
-- [ ] Suppression sheet: anyone who opts out goes on it the same day and is never emailed again
-- [ ] For each lead, record where the contact came from (source URL) and the date
+- [x] Suppression: log an opt-out reply as **Unsubscribe** in the inbox; the email/phone is hashed onto the permanent list and future scans and imports skip it
+- [x] Provenance: every lead and contact stores its source URL and date automatically
 
 ## Leads
 
-- [ ] Market: **UK** (decided 27 Sep). Pick 1 segment, e.g. London real estate agencies
+- [ ] Market: README says **UK** (decided 27 Sep), but the first real campaign ("Test 1") is Mumbai. Confirm which market Phase 0 measures; the 2% gate is per market
+- [ ] Pick 1 segment (Segments page) and keep it for all 50 sends
 - [ ] Write a one-page ICP: who qualifies, who is disqualified, which case study to cite
-- [ ] Get 50 leads **with website URLs and emails** (the 26 Sep London export had neither: every Website cell was empty and no emails)
-- [ ] Import: `pnpm le:import <file.csv> --country GB --campaign "<name>" --segment "Real estate developers and brokers"`, then `pnpm le:process --campaign "<name>"`
-- [ ] Track in the inbox instead of a sheet: Mark as sent / Log reply per lead; the stats bar shows the gate numbers
+- [ ] Create real (not test) campaigns in areas with weaker sites (use Preview; prefer neighbourhoods), keep `pnpm le:worker` running
+- [ ] Approve about 50 leads that have an email or a phone (best-fit leads often have only a phone → WhatsApp)
+- [ ] Track in the inbox: Mark as sent / Log reply per lead; the stats bar shows the gate numbers
 
-## Audits (automated by `le:process`)
+## Audits (automated by the worker)
 
 - [ ] Spot-check 2–3 audits against pagespeed.web.dev
 - [ ] Approve/reject in the inbox; the **Approved** tab is the send list, and each lead's top issue is the email opener
@@ -40,6 +42,7 @@ reply, and write down any "not now" answers.
 ## Sending
 
 - [ ] Email template: under 120 words, opens with the audit finding, one ask, no attachments, plain text, at most one link
+- [ ] WhatsApp: use a separate business number; review the drafted message before sending; low volume
 - [ ] Ramp: max 15 new emails/day in week 1, 25 in week 2
 - [ ] Send only Tue–Thu, 9:30–11:30 or 15:00–17:00 in the lead's local time (UK: GMT/BST, i.e. 14:00–16:00 / 19:30–21:30 IST while BST applies)
 - [ ] Follow-ups on day 3 and day 7, each adding something new (recommended: 42% of replies come from follow-ups, so skipping them undercounts the offer)
@@ -51,4 +54,3 @@ reply, and write down any "not now" answers.
 - [ ] Classify every reply: interested / not now / referral / OOO / not interested / unsubscribe / bounce
 - [ ] Record the result in `README.md` → Gate results
 - [ ] Pass → unblock Phase 1b. Fail → rework the offer or segment and run again. Don't start building.
-- [ ] Hand the tracking sheet to the build as CSV (it becomes the first test data for the manual import scanner)
