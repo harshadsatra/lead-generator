@@ -50,6 +50,7 @@ Run these on the server and paste the results into `infra/SERVER.md`. Don't chan
 
 ## 4. Access to the shared Directus and queue DB
 
+- [x] Admin token in `.env` as `DIRECTUS_SETUP_TOKEN` (rotate after sharing it in chat)
 - [ ] Harshad creates (or approves Claude creating) the `LE Worker` user with a static token, with a role that has access to `le_*` only, plus a separate admin token used only by the setup script
 - [ ] Tokens go in local `.env` only (`DIRECTUS_TOKEN`, `DIRECTUS_SETUP_TOKEN`)
 - [ ] Ask Harshad before creating the `lead_queue` database on the Directus Postgres (its own DB user, no access to the Directus DB)
@@ -66,15 +67,15 @@ non-`le_` items, and supports `--dry-run` (prints the plan). Run the dry run and
 show Harshad the output before the first real run.
 
 - [x] Setup script, dry run by default (`pnpm le:setup`, `--apply` to write); refuses any collection/role not prefixed `le_` / `LE`
-- [ ] "Lead Engine" collection folder
-- [ ] Core: `le_businesses`, `le_signals`, `le_contacts`, `le_audits`, `le_leads`, `le_messages`, `le_replies`, `le_events`, `le_suppression`
-- [ ] Campaign + team: `le_campaigns` (incl. **`is_test`** boolean), `le_campaign_mailboxes`, `le_team_members`, `le_campaign_members`; `le_leads` gets `campaign_id`, `owner_id`, `offer`
-- [ ] Config: `le_global_config` (singleton), `le_segments`, `le_mailboxes`, `le_templates`, `le_llm_usage`
+- [x] "Lead Engine" collection folder
+- [x] Core: `le_businesses`, `le_signals`, `le_contacts`, `le_audits`, `le_leads`, `le_messages`, `le_replies`, `le_events`, `le_suppression`
+- [x] Campaign + team: `le_campaigns` (incl. **`is_test`** boolean), `le_campaign_mailboxes`, `le_campaign_members` (campaign ↔ Directus user, manager/closer); `le_leads` gets `campaign_id`, `owner_id`, `offer`. No `team_members` table: the team is Directus users with `LE` roles (approved 26 Sep)
+- [x] Config: `le_global_config` (singleton), `le_segments`, `le_mailboxes`, `le_templates`, `le_llm_usage`
 - [ ] Deferred to later phases: `le_preview_sites` (phase 3), `le_territories` (phase 2)
-- [ ] Unique constraints: `le_businesses.domain`, `le_businesses.gbp_place_id`, `le_suppression.email_hash`
-- [ ] `le_leads.events` as an O2M alias so a lead update + event insert go in one request (Directus runs nested writes in one transaction)
-- [ ] Roles: `LE Admin`, `LE Campaign manager`, `LE Closer`, per spec § Team management, with **no** permissions outside `le_*`
-- [ ] Seed: 6 segments with rubric weights, `le_global_config` defaults (₹30,000 min budget, cadence 0/3/7/14, 40/day cap, Tue–Thu windows, default owner Harshad)
+- [x] Unique constraints: `le_businesses.domain`, `le_businesses.gbp_place_id`, `le_suppression.email_hash`
+- [x] `le_leads.events` as an O2M alias so a lead update + event insert go in one request (Directus runs nested writes in one transaction)
+- [x] Roles: `LE Admin`, `LE Campaign manager`, `LE Closer`, per spec § Team management, with **no** permissions outside `le_*`
+- [x] Seed: 6 segments with rubric weights, `le_global_config` defaults (₹30,000 min budget, cadence 0/3/7/14, 40/day cap, Tue–Thu windows). Still blank: `default_owner`, `llm_budget_monthly_inr`, which Harshad sets in Directus
 - [ ] `pnpm le:cleanup-test`: deletes every `is_test` campaign and everything hanging off it (dry run first)
 
 ## 6. Shared core (tested, pure code)
