@@ -12,6 +12,7 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test && node --experimental-strip-types --no-warnings --test infra/directus/*.test.ts",
-    "le:setup": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/setup.ts"
+    "le:setup": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/setup.ts",
+    "le:cleanup-test": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/cleanup-test.ts"
   }
 }

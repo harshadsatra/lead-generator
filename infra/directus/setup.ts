@@ -3,9 +3,8 @@
 // Run: pnpm le:setup [--apply]
 
 import { fileURLToPath } from 'node:url'
+import { directus } from './api.ts'
 
-const BASE = process.env.DIRECTUS_URL
-const TOKEN = process.env.DIRECTUS_SETUP_TOKEN
 const APPLY = process.argv.includes('--apply')
 
 // ---------- schema ----------
@@ -314,16 +313,7 @@ const GLOBAL_CONFIG = {
 
 // ---------- http + guard ----------
 
-async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body)
-  })
-  const json = res.status === 204 ? {} : await res.json() as { data?: T, errors?: { message: string }[] }
-  if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${JSON.stringify((json as { errors?: unknown }).errors)}`)
-  return (json as { data: T }).data
-}
+let api: ReturnType<typeof directus>
 
 const isLe = (s: unknown) => typeof s === 'string' && s.startsWith('le_')
 export const ours = { policies: new Set<string>(), roles: new Set<string>() }
@@ -367,8 +357,8 @@ const pkDef = {
 }
 
 async function main() {
-  if (!BASE || !TOKEN) throw new Error('DIRECTUS_URL and DIRECTUS_SETUP_TOKEN must be set in .env')
-  console.log(`${APPLY ? 'APPLY' : 'DRY RUN'} against ${BASE}\n`)
+  api = directus(process.env.DIRECTUS_SETUP_TOKEN)
+  console.log(`${APPLY ? 'APPLY' : 'DRY RUN'} against ${process.env.DIRECTUS_URL}\n`)
 
   const collections = new Set((await api<{ collection: string }[]>('GET', '/collections?limit=-1')).map(c => c.collection))
   const fields = new Set((await api<{ collection: string, field: string }[]>('GET', '/fields?limit=-1')).map(f => `${f.collection}.${f.field}`))

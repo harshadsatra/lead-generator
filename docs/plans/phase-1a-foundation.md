@@ -76,7 +76,7 @@ show Harshad the output before the first real run.
 - [x] `le_leads.events` as an O2M alias so a lead update + event insert go in one request (Directus runs nested writes in one transaction)
 - [x] Roles: `LE Admin`, `LE Campaign manager`, `LE Closer`, per spec § Team management, with **no** permissions outside `le_*`
 - [x] Seed: 6 segments with rubric weights, `le_global_config` defaults (₹30,000 min budget, cadence 0/3/7/14, 40/day cap, Tue–Thu windows). Still blank: `default_owner`, `llm_budget_monthly_inr`, which Harshad sets in Directus
-- [ ] `pnpm le:cleanup-test`: deletes every `is_test` campaign and everything hanging off it (dry run first)
+- [x] `pnpm le:cleanup-test`: deletes every `is_test` campaign and everything hanging off it, plus businesses only test campaigns used; keeps suppression + llm_usage (dry run unless `--apply`)
 
 ## 6. Shared core (tested, pure code)
 

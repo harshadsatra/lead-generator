@@ -19,6 +19,7 @@ pnpm typecheck                           # all packages
 pnpm lint                                # admin (eslint via @nuxt/eslint)
 pnpm test                                # node:test via tsx, files *.test.ts (+ infra guard test)
 pnpm le:setup [--apply] [--verbose]      # Directus le_* schema/roles/seed; dry run unless --apply
+pnpm le:cleanup-test [--apply]           # delete all is_test campaign data; dry run unless --apply
 pnpm --filter @lead/shared exec tsx --test src/<file>.test.ts  # single test file
 ```
 
