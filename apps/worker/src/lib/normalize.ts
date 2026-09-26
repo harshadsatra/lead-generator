@@ -50,7 +50,8 @@ const ALIASES: Record<string, string[]> = {
   reviews: ['reviews', 'reviewcount', 'reviewscount', 'totalreviews', 'userratingstotal', 'ratingcount', 'noofreviews'],
   ownerName: ['owner', 'ownername', 'contactname', 'decisionmaker', 'contactperson'],
   sourceUrl: ['sourceurl', 'googlemapsurl', 'mapsurl', 'mapslink', 'googlemapslink', 'gmblink', 'link', 'placeurl'],
-  placeId: ['placeid', 'googleplaceid', 'gbpplaceid']
+  placeId: ['placeid', 'googleplaceid', 'gbpplaceid'],
+  hasWebsite: ['haswebsite', 'websiteavailable']
 }
 export type Field = keyof typeof ALIASES
 

@@ -39,4 +39,5 @@ test('email + column mapping', () => {
   assert.deepEqual(mapColumns(['Business Name', 'Website URL', 'Phone Number', 'Total Reviews', 'Google Maps URL', 'Random']), {
     name: 'Business Name', website: 'Website URL', phone: 'Phone Number', reviews: 'Total Reviews', sourceUrl: 'Google Maps URL'
   })
+  assert.equal(mapColumns(['Business', 'Has Website']).hasWebsite, 'Has Website')
 })

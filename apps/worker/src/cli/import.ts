@@ -64,7 +64,7 @@ async function main() {
   if (!cols.name) throw new Error(`No business name column found. Headers: ${Object.keys(rows[0] ?? {}).join(', ')}`)
   console.log(`Columns: ${Object.entries(cols).map(([f, h]) => `${f}←"${h}"`).join(', ')}`)
   const campaign = await campaignId()
-  const tally = { imported: 0, merged: 0, skippedDuplicate: 0, skippedOtherCampaign: 0, skippedSuppressed: 0, skippedNoName: 0 }
+  const tally = { imported: 0, merged: 0, skippedDuplicate: 0, skippedOtherCampaign: 0, skippedSuppressed: 0, skippedNoName: 0, skippedWebsiteUrlMissing: 0 }
   const foundAt = new Date().toISOString()
 
   for (const [i, row] of rows.entries()) {
@@ -75,6 +75,11 @@ async function main() {
       continue
     }
     const site = normalizeWebsite(get('website'))
+    // Source says a site exists but gave no URL: auditing would wrongly claim "no website".
+    if (!site.url && /^(y|yes|true|1)$/i.test(get('hasWebsite') ?? '')) {
+      tally.skippedWebsiteUrlMissing++
+      continue
+    }
     const phone = normalizePhone(get('phone'))
     const email = firstEmail(get('email'))
     const city = get('city') ?? ''
@@ -125,6 +130,7 @@ async function main() {
     tally.imported++
   }
   console.log(`\n${rows.length} rows →`, tally)
+  if (tally.skippedWebsiteUrlMissing) console.log(`\n${tally.skippedWebsiteUrlMissing} rows say they have a website but the Website column is empty. Re-export with website URLs.`)
 }
 
 main().catch((err) => {
