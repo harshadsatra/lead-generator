@@ -34,7 +34,9 @@ and rework the offer or segment (spec § Spend gates).
 | Sequencing | Phase 0 runs by hand in parallel with Phase 1a. Phase 1b (agents, sending) starts only after the Phase 0 gate passes. |
 | Repo | One pnpm monorepo: `apps/admin` (Nuxt 4), `apps/worker` (TS agents), `packages/shared` (Zod schemas, types, state machine), `infra/` (Compose, Directus snapshot). |
 | Hosting | Existing Contabo VPS. |
-| Directus | The Directus already on that server is shared with other projects, so it is **not touched**. The lead engine gets its own Directus + Postgres 16 containers in a separate Compose stack. |
+| Directus | Use the existing shared instance at cms.shwezstudio.in, for local dev too. Isolation: `le_` collection prefix, "Lead Engine" folder, `LE` roles scoped to `le_*`, create-only setup script, never `schema apply`. |
+| Queue | pg-boss in a separate `lead_queue` database on the Directus Postgres; SSH tunnel in dev. |
+| Test data | `is_test` flag on campaigns: never sends live, removed by a cleanup script. |
 | Cold sending in phase 1 | Gmail API on the dedicated Workspace mailbox (the spec's Decisions table). The roadmap row saying "sending via bought tool" is treated as superseded. |
 | Tracking | Markdown checklists in `docs/plans/`. |
 

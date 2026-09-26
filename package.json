@@ -11,8 +11,6 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
-    "db:up": "docker compose -f infra/docker-compose.dev.yml up -d",
-    "db:down": "docker compose -f infra/docker-compose.dev.yml down"
+    "test": "pnpm -r test"
   }
 }

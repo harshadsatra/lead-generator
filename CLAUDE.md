@@ -13,7 +13,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm i                                   # install all workspaces
-pnpm db:up / pnpm db:down                # local Postgres 16 (:5433) + Directus 12.4.1 (:8055)
 pnpm --filter @lead/admin dev            # Nuxt admin on :3000
 pnpm --filter @lead/worker dev           # worker (tsx watch)
 pnpm typecheck                           # all packages
@@ -24,10 +23,12 @@ pnpm --filter @lead/shared exec tsx --test src/<file>.test.ts  # single test fil
 
 ## Layout
 
-- `apps/admin`: Nuxt 4 + Nuxt UI v4, from the `nuxt-ui-templates/dashboard` template (its demo pages are still there until the Phase 1a strip task). Talks to Directus with the Directus SDK.
-- `apps/worker`: one Node 22 TS service that runs every agent through pg-boss (on the same Postgres as Directus). Run with `tsx`, no build step.
+- `apps/admin`: Nuxt 4 + Nuxt UI v4, from the `nuxt-ui-templates/dashboard` template (its demo pages are still there until the Phase 1a strip task). Talks to Directus through a Nuxt server proxy (no CORS changes on the shared instance).
+- `apps/worker`: one Node 22 TS service that runs every agent. Reads and writes data through the Directus REST API (`DIRECTUS_TOKEN`, scoped to `le_*`). Jobs run on pg-boss in the separate `lead_queue` Postgres database (SSH tunnel in dev). Run with `tsx`, no build step.
 - `packages/shared`: Zod enums/schemas, lead state machine, scoring rubric. Consumed as TS source (`exports` → `src/index.ts`).
-- `infra/`: Compose files; `infra/directus/snapshot.yaml` is the schema source of truth (Directus owns the tables).
+- `infra/`: production Compose file (worker, reacher, admin) and `infra/directus/setup.ts`, the create-only schema script.
+
+**Directus is the shared production instance at https://cms.shwezstudio.in, for local dev too.** Other projects' data lives there. Every lead-engine collection is `le_*` (spec table names get the prefix, e.g. spec `leads` → `le_leads`), sits in the "Lead Engine" folder, and is accessible only to the `LE Admin` / `LE Campaign manager` / `LE Closer` / `LE Worker` roles.
 
 Pipeline (spec § System architecture): Scanner plugins → dedupe → Enricher → Auditor → Analyser → **Gate 1** (human) → Sales Agent → **Gate 2** (human) → Sender → Reply Classifier. Agents never call each other: each job reads the lead row, does its work, and moves it forward with `transition()`.
 
@@ -41,20 +42,22 @@ Pipeline (spec § System architecture): Scanner plugins → dedupe → Enricher 
 - moving from one phase to the next (the gate result must be recorded in `docs/plans/README.md`)
 
 **Never:**
-- touch the **shared Directus** on the Contabo server (other clients' data). The lead engine has its own Directus + Postgres stack.
-- send real email outside `SEND_MODE=live`, which only Harshad sets. Dev uses `dry_run`, tests use `allowlist`.
+- run `directus schema apply` / `schema snapshot` apply against cms.shwezstudio.in. It diffs the whole instance and can delete other projects' collections.
+- create, alter or delete any Directus collection, field, role, flow or setting that isn't `le_*` / `LE *`. Schema changes go through `infra/directus/setup.ts` (create-only, `--dry-run` first, output shown to Harshad).
+- delete data in Directus except through `pnpm le:cleanup-test` (only `is_test` campaigns) or with Harshad's explicit OK.
+- send real email outside `SEND_MODE=live`, which only Harshad sets. Dev uses `dry_run`, tests use `allowlist`. `is_test` campaigns never send live.
 - start Phase 1b work before the Phase 0 gate passes.
 - build automated DMs for LinkedIn/Instagram/X, or scrape Google Maps or LinkedIn (spec § Non-goals, § Avoid).
 - commit `.env` or secrets. Add new variables to `.env.example` by name only.
 
 **Always:**
-- Change lead state only through `transition()`, which writes the `events` row in the same transaction.
+- Change lead state only through `transition()`: one PATCH on `le_leads` with a nested `events` create, so both commit together.
+- Do dev and test runs inside campaigns with `is_test = true`.
 - Keep hard limits in code with a test: 40/day per mailbox across campaigns, the 15 → 25 → 40 ramp, send windows, max follow-ups, ₹5 LLM cost per lead, monthly LLM budget, bounce > 3% auto-pause, emergency stop.
 - Make jobs idempotent: a retry must never double-send (check `provider_msg_id`).
 - Route LLM calls through the worker's LLM wrapper (logs `llm_usage`, enforces caps). Use Haiku 4.5 for filter/classify and Sonnet 5 for analysis/drafting.
 - Check the suppression list before every enrich and every send.
 - Make every audit claim and email fact map to a stored value; the score comes from the rubric function, not the model.
-- Change schema in local Directus, then re-snapshot to `infra/directus/snapshot.yaml` and commit.
 
 **Keep it lean (budget is tight):**
 - Build only what the current plan item needs. No abstractions or dependencies "for later".

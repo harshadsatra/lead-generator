@@ -60,6 +60,7 @@ approve them, and send, before building automated discovery.
 ## 7. Sender (Gmail API)
 
 - [ ] OAuth for the dedicated Workspace mailbox; token stored server-side only
+- [ ] Leads in `is_test` campaigns can never send live, whatever `SEND_MODE` is (tested)
 - [ ] **`SEND_MODE=dry_run` by default**; `allowlist` mode sends only to test addresses; `live` needs an explicit env change
 - [ ] Caps in code: 40/day per mailbox across all campaigns, ramp 15 → 25 → 40 by week
 - [ ] Send windows Tue–Thu 9:30–11:30 / 15:00–17:00 lead time zone, holiday list
