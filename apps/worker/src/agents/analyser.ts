@@ -31,7 +31,8 @@ export function scoreFacts(input: {
   }
 }
 
-export function route(score: number, band: string, reviewCount: number | null, minReviews: number | null) {
+export function route(score: number, band: string, reviewCount: number | null, minReviews: number | null, chainBranch: string | null = null) {
+  if (chainBranch) return { to: 'archived' as const, reason: `chain branch: website is a branch page (${chainBranch})` }
   if (reviewCount !== null && minReviews !== null && reviewCount < minReviews) {
     return { to: 'archived' as const, reason: `too small: ${reviewCount} reviews < ${minReviews}` }
   }

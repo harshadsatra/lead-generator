@@ -65,7 +65,7 @@ export async function processLead(lead: Row, segment: Segment, minReviews: numbe
   }
   result ??= await latestAudit(lead.business_id.id) ?? await audit(lead)
 
-  const signal = await one<{ found_at: string }>('le_signals', { business_id: { _eq: lead.business_id.id } }, 'found_at')
+  const signal = await one<{ found_at: string, raw: { _chain_branch?: string | null } | null }>('le_signals', { business_id: { _eq: lead.business_id.id } }, 'found_at,raw')
   const { score, band, breakdown } = scoreLead(scoreFacts({
     metrics: result.metrics,
     reviewCount: lead.business_id.review_count,
@@ -75,7 +75,7 @@ export async function processLead(lead: Row, segment: Segment, minReviews: numbe
   }))
   const plan = { hook: result.issues[0]?.text ?? null, issues: result.issues, service: segment.service, case_study: segment.case_studies }
   await transition(lead, 'scored', 'analyser', `score ${score}`, { score, band, score_breakdown: breakdown, segment_id: segment.id, plan })
-  const next = route(score, band, lead.business_id.review_count, minReviews)
+  const next = route(score, band, lead.business_id.review_count, minReviews, signal?.raw?._chain_branch ?? null)
   await transition(lead, next.to, 'analyser', next.reason, next.to === 'archived' ? { closed_reason: next.reason } : {})
   return { score, band: next.to === 'archived' ? 'archived' : band }
 }

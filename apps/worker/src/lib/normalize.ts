@@ -57,3 +57,12 @@ export function mapColumns(headers: string[]): Partial<Record<Field, string>> {
   }
   return out
 }
+
+// Chains list a branch page (".../estate-agents/covent-garden", ".../our-branches/west-end") as the
+// website; independents list their homepage. Returns the path as evidence, or null.
+const BRANCH_SEGMENT = /^(branch|branches|our-branches|find-a-branch|office|offices|our-offices|location|locations|our-locations|store|stores|store-locator|estate-agents|letting-agents|showrooms?|clinics|restaurants)$/i
+export function chainBranchPath(url: string | null): string | null {
+  if (!url || !URL.canParse(url)) return null
+  const parts = new URL(url).pathname.split('/').filter(Boolean)
+  return parts.length >= 2 && parts.slice(0, -1).some(p => BRANCH_SEGMENT.test(p)) ? `/${parts.join('/')}` : null
+}

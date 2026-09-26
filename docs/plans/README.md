@@ -44,6 +44,7 @@ and rework the offer or segment (spec § Spend gates).
 | Markets (27 Sep) | Leads can be global. Phase 0 validates the **UK** first; each later market gets its own small validation run. Every business stores its ISO country; phones are stored E.164. |
 | Cross-country compliance (27 Sep) | Harshad chose **no country restrictions** and no legal review, overriding the spec's "review before EU/US leads" trigger. The spec's basics still apply to every email: real identity, postal address, one-click opt-out, permanent suppression. |
 | Discovery before the gate (27 Sep) | Harshad asked to build the campaign screen, Google Places scan and Enricher v0 before Phase 0 finishes, because external exports lacked URLs and emails. Paid lookups (Hunter), email verification, LLM and sending stay gated. |
+| Chain filter (27 Sep) | Leads whose listed website is a branch page on a chain's site (`/estate-agents/<area>`, `/our-branches/<x>`, `/our-offices/<x>` …) are archived as "chain branch" with the path as evidence. |
 | Access | One `LE` role per user (or Directus admin); per-campaign manager/closer via `le_campaign_members`. Keep it simple: internal tool. |
 
 ## Open questions (ask Harshad; don't guess)

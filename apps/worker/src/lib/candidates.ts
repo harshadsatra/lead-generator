@@ -1,5 +1,5 @@
 import { api, one } from './db'
-import { firstEmail, hash, normalizePhone, normalizeWebsite } from './normalize'
+import { chainBranchPath, firstEmail, hash, normalizePhone, normalizeWebsite } from './normalize'
 
 const INACTIVE = ['archived', 'rejected', 'closed_no_response', 'closed_lost', 'suppressed']
 
@@ -77,7 +77,7 @@ export async function addCandidate(c: Candidate, ctx: CandidateContext): Promise
 
   await api('POST', '/items/le_signals', {
     business_id: business!.id, source: ctx.source, source_url: c.sourceUrl, signal_type: ctx.source,
-    raw: { ...c.raw, _website: site.url, _social_only: site.socialOnly }, found_at: ctx.foundAt
+    raw: { ...c.raw, _website: site.url, _social_only: site.socialOnly, _chain_branch: chainBranchPath(site.url) }, found_at: ctx.foundAt
   })
   let contactId: string | null = null
   if (email || phone) {

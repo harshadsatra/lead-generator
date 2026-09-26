@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { csvToObjects, parseCsv } from './csv'
-import { firstEmail, mapColumns, parseCount, normalizePhone, normalizeWebsite } from './normalize'
+import { chainBranchPath, firstEmail, mapColumns, parseCount, normalizePhone, normalizeWebsite } from './normalize'
 
 test('csv: quotes, escaped quotes, embedded comma/newline, CRLF, BOM, blank lines', () => {
   const text = '﻿name,notes\r\n"Cafe, Bandra","say ""hi""\nthere"\r\n\r\nPlain,x\n'
@@ -42,4 +42,14 @@ test('email + column mapping', () => {
     name: 'Business Name', website: 'Website URL', phone: 'Phone Number', reviews: 'Total Reviews', sourceUrl: 'Google Maps URL'
   })
   assert.equal(mapColumns(['Business', 'Has Website']).hasWebsite, 'Has Website')
+})
+
+test('chain branch pages are recognised; homepages and single pages are not', () => {
+  assert.equal(chainBranchPath('https://www.chestertons.co.uk/estate-agents/covent-garden'), '/estate-agents/covent-garden')
+  assert.equal(chainBranchPath('https://www.stirlingackroyd.com/our-branches/west-end/'), '/our-branches/west-end')
+  assert.equal(chainBranchPath('https://www.dexters.co.uk/contact-us/our-offices/dexters-fitzrovia'), '/contact-us/our-offices/dexters-fitzrovia')
+  assert.equal(chainBranchPath('https://tavistockbow.com/'), null)
+  assert.equal(chainBranchPath('https://smith-estates.co.uk/estate-agents'), null)
+  assert.equal(chainBranchPath('https://cafe.example/menu/drinks'), null)
+  assert.equal(chainBranchPath(null), null)
 })
