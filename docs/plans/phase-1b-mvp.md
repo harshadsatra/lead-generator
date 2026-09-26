@@ -1,11 +1,33 @@
 # Phase 1b — MVP agents and UI (weeks 3–6)
 
-**Blocked until the Phase 0 gate passes** (see README → Gate results).
+§0 (the Phase 0 helper) was approved to run before the gate (26 Sep).
+**Everything from § Prep onward stays blocked until the Phase 0 gate passes** (see README → Gate results).
 
 **Exit test:** 25 approved leads/week, bounce < 2%, admin review < 20 min/day.
 
-Order is chosen so real value arrives early: import Phase 0 leads, audit them,
-approve them, and send, before building automated discovery.
+## 0. Phase 0 helper (runs now; no LLM, no paid APIs, no sending)
+
+Harshad imports the Phase 0 leads, the tool audits and scores them, and he
+writes the 50 emails by hand from the results. Runs as a CLI, with no job queue
+yet; each step is a plain function that pg-boss wraps later.
+
+- [ ] Worker Directus client (`LE Worker` token) + `transition()`: one PATCH on `le_leads` with a nested `events` create
+- [ ] CSV import: `pnpm le:import <file.csv> --campaign "<name>" --segment "<segment>" [--test]`. Tolerant headers (Mantis export, own sheet); dedupe on domain → phone → name+city; skip businesses active in another campaign; provenance (source, source_url, found_at); CSV email stored as an unverified contact. State: discovered → enriched
+- [ ] Auditor v0 (no new dependencies): PSI mobile + desktop (score, LCP, CLS), SSL, mobile viewport, no working site (unreachable, parked, under construction, Facebook/Instagram-only, soft 404), contact form present, CMS (WordPress + version, WooCommerce, Shopify, Wix, Squarespace). Top 3 plain-language issues, each tied to a metric key. State → audited
+- [ ] Scoring from audit + CSV facts with the rubric → `scored` → `awaiting_approval` (50+) or `archived` (<50, with reason)
+- [ ] Admin: Directus fetch helper with access-token refresh; Approval inbox lists `awaiting_approval` leads for a chosen campaign (business, score/band, top issues, PSI, site link), read-only
+- [ ] Harshad test: import 5–10 real leads; check 2–3 audits against pagespeed.web.dev by hand
+
+Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reacher, LLM agents, approve/send.
+
+## Prep (moved from Phase 1a; do when the job queue or deploy is next)
+
+- [ ] Server audit (read-only), results into `infra/SERVER.md`: `nproc && free -h && df -h`; `docker ps --format '{{.Names}} {{.Image}} {{.Ports}}'`; Postgres container/version and network behind cms.shwezstudio.in; reverse proxy; outbound port 25 (`nc -vz -w 5 gmail-smtp-in.l.google.com 25`); existing Postgres backups
+- [ ] With Harshad's OK: `lead_queue` database + its own DB user on the Directus Postgres; SSH tunnel command for local dev in CLAUDE.md
+- [ ] Confirm the Directus licence covers this use (BSL / Open Innovation Grant)
+- [ ] `infra/docker-compose.yml`: worker, reacher, admin (Directus/Postgres already run); admin subdomain + reverse proxy (ask Harshad for the name)
+- [ ] Backups include `le_*` tables and `lead_queue`, plus one restore test
+- [ ] If RAM < 8 GB: Playwright concurrency 1 and a VPS upgrade checkpoint
 
 ## 1. Safety rails (before any agent)
 

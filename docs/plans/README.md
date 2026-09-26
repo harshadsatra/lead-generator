@@ -8,8 +8,8 @@ These files track **progress**. Tick `[x]` in the same commit as the work.
 | Plan | Gate to start | Status |
 | --- | --- | --- |
 | [Phase 0 — Validate (manual)](phase-0-validate.md) | None | Not started |
-| [Phase 1a — Foundation](phase-1a-foundation.md) | None (runs in parallel with Phase 0) | In progress |
-| [Phase 1b — MVP agents + UI](phase-1b-mvp.md) | Phase 0 exit test passed | Blocked |
+| [Phase 1a — Foundation](phase-1a-foundation.md) | None (runs in parallel with Phase 0) | Done |
+| [Phase 1b — MVP agents + UI](phase-1b-mvp.md) | §0 Phase 0 helper: none. Rest: Phase 0 exit test passed | §0 in progress, rest blocked |
 | [Phase 2 — Close the loop](phase-2-close-loop.md) | Phase 1 exit test passed | Blocked |
 | [Phase 3 — Expand](phase-3-expand.md) | Phase 2 exit test passed | Blocked |
 | Phase 4 — Productize | 2 quarters of data, 3+ projects won | Not planned yet |
@@ -39,11 +39,14 @@ and rework the offer or segment (spec § Spend gates).
 | Test data | `is_test` flag on campaigns: never sends live, removed by a cleanup script. |
 | Cold sending in phase 1 | Gmail API on the dedicated Workspace mailbox (the spec's Decisions table). The roadmap row saying "sending via bought tool" is treated as superseded. |
 | Tracking | Markdown checklists in `docs/plans/`. |
+| Phase 0 helper | Build CSV import + audit + score + read-only inbox before the gate, to speed up Phase 0. No LLM, paid APIs or sending until the gate passes. |
+| Access | One `LE` role per user (or Directus admin); per-campaign manager/closer via `le_campaign_members`. Keep it simple: internal tool. |
 
 ## Open questions (ask Harshad; don't guess)
 
 - [ ] Address and domain of the dedicated cold mailbox (spec, before Phase 0).
-- [ ] Contabo VPS size and whether outbound port 25 is open (needed for Reacher). Answered by the server audit in Phase 1a.
+- [ ] A sample Mantis CSV export (or your own sheet), to check the import columns.
+- [ ] Free PageSpeed Insights API key (`PAGESPEED_API_KEY`): Google Cloud → enable "PageSpeed Insights API" → create API key. Without one, Google allows only a few audits.
 - [ ] Scoring partial credit (`packages/shared/src/rubric.ts`, `FACTORS`): the spec gives weights but not partial credit, e.g. PSI mobile < 40 = half of Need, 20–49 reviews = a quarter of Size. Review before Phase 1b.
 - [ ] State machine gaps (needed by Phase 2): the spec diagram has no state for a bounce with no other contact, a referral reply (what happens to the original lead), or a lead where the Enricher finds no contact at all.
 - [ ] Phase 0 lead source: Mantis's free tier gives only about 20 leads with contacts. Buy Mantis (₹3,499), buy LeadSweep Starter ($39), or pull the other 30 by hand?
