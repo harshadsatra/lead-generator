@@ -13,8 +13,8 @@ yet; each step is a plain function that pg-boss wraps later.
 
 - [x] Worker Directus client (`LE Worker` token) + `transition()`: one PATCH on `le_leads` with a nested `events` create
 - [x] CSV import: `pnpm le:import <file.csv> --campaign "<name>" --segment "<segment>" [--test]`. Tolerant headers (Mantis export, own sheet); dedupe on domain → phone → name+city; skip businesses active in another campaign; provenance (source, source_url, found_at); CSV email stored as an unverified contact. State: discovered → enriched
-- [ ] Auditor v0 (no new dependencies): PSI mobile + desktop (score, LCP, CLS), SSL, mobile viewport, no working site (unreachable, parked, under construction, Facebook/Instagram-only, soft 404), contact form present, CMS (WordPress + version, WooCommerce, Shopify, Wix, Squarespace). Top 3 plain-language issues, each tied to a metric key. State → audited
-- [ ] Scoring from audit + CSV facts with the rubric → `scored` → `awaiting_approval` (50+) or `archived` (<50, with reason)
+- [x] Auditor v0 (no new dependencies): PSI mobile + desktop (score, LCP, CLS), SSL, mobile viewport, no working site (unreachable, parked, under construction, Facebook/Instagram-only, soft 404), contact form present, CMS (WordPress + version, WooCommerce, Shopify, Wix, Squarespace). Top 3 plain-language issues, each tied to a metric key. State → audited
+- [x] Scoring from audit + CSV facts with the rubric → `scored` → `awaiting_approval` (50+) or `archived` (<50, with reason)
 - [ ] Admin: Directus fetch helper with access-token refresh; Approval inbox lists `awaiting_approval` leads for a chosen campaign (business, score/band, top issues, PSI, site link), read-only
 - [ ] Harshad test: import 5–10 real leads; check 2–3 audits against pagespeed.web.dev by hand
 

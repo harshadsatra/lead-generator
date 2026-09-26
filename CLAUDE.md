@@ -20,6 +20,7 @@ pnpm lint                                # admin (eslint via @nuxt/eslint)
 pnpm test                                # node:test via tsx, files *.test.ts (+ infra guard test)
 pnpm le:setup [--apply] [--verbose]      # Directus le_* schema/roles/seed; dry run unless --apply
 pnpm le:import <file.csv> --campaign "<name>" [--segment "<segment>"] [--source mantis] [--test]
+pnpm le:process --campaign "<name>"         # audit + score enriched leads; PageSpeed quota errors leave the lead for retry
 pnpm le:cleanup-test [--apply]           # delete all is_test campaign data; dry run unless --apply
 pnpm --filter @lead/shared exec tsx --test src/<file>.test.ts  # single test file
 ```
