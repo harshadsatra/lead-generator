@@ -1,5 +1,5 @@
 import { fetchPage as get } from '../lib/http'
-import { analyzeHtml, buildIssues, isOutdatedCms, type Issue, type Metrics } from './audit-checks'
+import { analyzeHtml, buildIssues, failedFetchVerdict, isOutdatedCms, type Issue, type Metrics } from './audit-checks'
 
 interface Psi { score: number | null, lcpMs: number | null, cls: number | null, error?: string }
 
@@ -35,7 +35,7 @@ async function psi(url: string, strategy: 'mobile' | 'desktop'): Promise<Psi> {
 }
 
 export interface AuditResult {
-  metrics: Metrics & { finalUrl?: string, fetchError?: string, psiError?: string }
+  metrics: Metrics & { finalUrl?: string, fetchError?: string, psiError?: string, blocked?: boolean }
   issues: Issue[]
 }
 
@@ -47,30 +47,37 @@ export async function auditSite(site: { domain: string | null, socialOnly: boole
   }
 
   let page = await get(`https://${site.domain}`)
-  let hasSsl = page.ok && page.url.startsWith('https://')
+  let hasSsl: boolean | null = page.ok && page.url.startsWith('https://')
   if (!page.ok) {
     page = await get(`http://${site.domain}`)
-    hasSsl = false
+    hasSsl = page.ok ? false : null
   }
-  if (!page.ok) {
-    const metrics = { ...empty, noSite: 'unreachable' as const, fetchError: page.error }
+
+  const facts = page.ok && page.status < 400 ? analyzeHtml(page.html, page.status) : null
+  if (facts?.noSite) {
+    const metrics = { ...empty, ...facts, hasSsl, finalUrl: page.ok ? page.url : undefined }
     return { metrics, issues: buildIssues(metrics) }
   }
 
-  const facts = analyzeHtml(page.html, page.status)
-  const [mobile, desktop] = facts.noSite
-    ? [{ score: null, lcpMs: null, cls: null }, { score: null }] as [Psi, Psi]
-    : await Promise.all([psi(page.url, 'mobile'), psi(page.url, 'desktop')])
-  const metrics = {
-    ...facts,
-    hasSsl,
+  const target = page.ok ? page.url : `https://${site.domain}`
+  const [mobile, desktop] = await Promise.all([psi(target, 'mobile'), psi(target, 'desktop')])
+  const psiFields = {
     psiMobile: mobile.score,
     psiDesktop: desktop.score,
     lcpMs: mobile.lcpMs,
     cls: mobile.cls,
-    outdatedCms: isOutdatedCms(facts.cms, facts.cmsVersion),
-    finalUrl: page.url,
     ...(mobile.error || desktop.error ? { psiError: mobile.error ?? desktop.error } : {})
   }
+
+  if (!facts) {
+    const { blocked, noSite } = failedFetchVerdict(page.ok ? { ok: true, status: page.status } : { ok: false }, mobile)
+    const metrics = {
+      ...empty, ...psiFields, noSite, hasSsl: noSite ? null : hasSsl,
+      blocked, fetchError: page.ok ? `HTTP ${page.status}` : page.error
+    }
+    return { metrics, issues: buildIssues(metrics) }
+  }
+
+  const metrics = { ...facts, ...psiFields, hasSsl, outdatedCms: isOutdatedCms(facts.cms, facts.cmsVersion), finalUrl: page.url }
   return { metrics, issues: buildIssues(metrics) }
 }

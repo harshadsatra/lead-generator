@@ -27,7 +27,7 @@ interface RawPlace {
   id: string
   displayName?: { text: string }
   formattedAddress?: string
-  addressComponents?: { longText: string, shortText: string, types: string[] }[]
+  addressComponents?: { longText?: string, shortText?: string, types?: string[] }[]
   nationalPhoneNumber?: string
   internationalPhoneNumber?: string
   websiteUri?: string
@@ -39,7 +39,7 @@ interface RawPlace {
 }
 
 export function toPlace(p: RawPlace): Place {
-  const part = (...types: string[]) => p.addressComponents?.find(c => types.some(t => c.types.includes(t)))
+  const part = (...types: string[]) => p.addressComponents?.find(c => types.some(t => c.types?.includes(t)))
   return {
     placeId: p.id,
     name: p.displayName?.text ?? '',

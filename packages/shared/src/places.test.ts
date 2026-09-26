@@ -28,4 +28,6 @@ test('maps a Places API (New) result', () => {
   })
   assert.equal(toPlace({ id: 'x', businessStatus: 'CLOSED_PERMANENTLY' }).closed, true)
   assert.equal(toPlace({ id: 'x' }).website, null)
+  // Google sometimes omits `types` on an address component
+  assert.equal(toPlace({ id: 'x', addressComponents: [{ longText: '?' }, { longText: 'Leeds', types: ['postal_town'] }] }).city, 'Leeds')
 })

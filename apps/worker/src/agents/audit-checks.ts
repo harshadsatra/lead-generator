@@ -104,3 +104,14 @@ export function buildIssues(m: Metrics): Issue[] {
   }
   return out.slice(0, 3)
 }
+
+const BLOCKED = /status code:? *(401|403|429)\b/i
+
+// Our fetch failed or got an error status. Only call the site broken if Google's Lighthouse can't load it either,
+// and never when either of us was refused (401/403/429): that is bot protection, not a broken site.
+export function failedFetchVerdict(fetched: { ok: boolean, status?: number }, mobile: { score: number | null, error?: string }) {
+  const blocked = (fetched.ok && [401, 403, 429].includes(fetched.status ?? 0)) || BLOCKED.test(mobile.error ?? '')
+  const googleFailed = mobile.score === null && !!mobile.error
+  const noSite: NoSiteReason | null = blocked || !googleFailed ? null : fetched.ok ? 'http_error' : 'unreachable'
+  return { blocked, noSite }
+}

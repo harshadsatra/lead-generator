@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { analyzeHtml, buildIssues, isOutdatedCms, type Metrics } from './audit-checks'
+import { analyzeHtml, buildIssues, failedFetchVerdict, isOutdatedCms, type Metrics } from './audit-checks'
 
 const page = (body: string, head = '') => `<html><head>${head}</head><body>${body}</body></html>`
 const long = 'Our menu and story. '.repeat(200)
@@ -37,4 +37,14 @@ test('issues ranked by impact, max 3, each tied to a metric', () => {
   assert.match(bad[0]!.text, /23\/100.*7\.2s/)
   const noSite = buildIssues({ ...base, noSite: 'parked', hasSsl: false, psiMobile: null, lcpMs: null })
   assert.deepEqual(noSite.map(i => i.key), ['noSite'])
+})
+
+test('a site is only "broken" when Google cannot load it either, and never when blocked', () => {
+  const lh = (msg: string) => ({ score: null, error: `Lighthouse returned error: ${msg}` })
+  assert.deepEqual(failedFetchVerdict({ ok: true, status: 403 }, { score: 99 }), { blocked: true, noSite: null })
+  assert.deepEqual(failedFetchVerdict({ ok: false }, { score: 42 }), { blocked: false, noSite: null })
+  assert.deepEqual(failedFetchVerdict({ ok: true, status: 404 }, { score: 62 }), { blocked: false, noSite: null })
+  assert.deepEqual(failedFetchVerdict({ ok: false }, lh('FAILED_DOCUMENT_REQUEST')), { blocked: false, noSite: 'unreachable' })
+  assert.deepEqual(failedFetchVerdict({ ok: true, status: 500 }, lh('ERRORED_DOCUMENT_REQUEST (Status code: 500)')), { blocked: false, noSite: 'http_error' })
+  assert.deepEqual(failedFetchVerdict({ ok: true, status: 500 }, lh('ERRORED_DOCUMENT_REQUEST (Status code: 403)')), { blocked: true, noSite: null })
 })

@@ -5,7 +5,7 @@ import { MAX_PAGES_PER_AREA, placesQuery, searchPlaces } from '@lead/shared/plac
 export default defineEventHandler(async (event) => {
   const id = z.uuid().safeParse(getRouterParam(event, 'id'))
   if (!id.success) throw createError({ statusCode: 400, message: 'Invalid campaign id' })
-  const key = useRuntimeConfig().googlePlacesApiKey
+  const key = process.env.GOOGLE_PLACES_API_KEY
   if (!key) throw createError({ statusCode: 503, message: 'GOOGLE_PLACES_API_KEY is not set' })
 
   const c = await directusAsUser<{ geography: { query?: string, areas?: string[] } | null }>(event, `/items/le_campaigns/${id.data}`, { query: { fields: 'geography' } })

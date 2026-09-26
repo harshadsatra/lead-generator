@@ -16,7 +16,7 @@ export async function scanCampaign(campaignId: string, geo: Geography, log: (msg
   const key = process.env.GOOGLE_PLACES_API_KEY
   if (!key) throw new Error('GOOGLE_PLACES_API_KEY is not set in .env')
   const scanned = { ...geo.scanned }
-  const tally: Partial<Record<Outcome | 'closed' | 'noName', number>> = {}
+  const tally: Partial<Record<Outcome | 'closed' | 'noName' | 'failed', number>> = {}
   const bump = (k: keyof typeof tally) => (tally[k] = (tally[k] ?? 0) + 1)
   const fresh = Date.now() - RESCAN_AFTER_DAYS * 86_400_000
 
@@ -40,11 +40,15 @@ export async function scanCampaign(campaignId: string, geo: Geography, log: (msg
           bump('noName')
           continue
         }
+        // One bad result must not abort the scan.
         bump(await addCandidate({
           name: p.name, website: p.website, phone: p.phone, city: p.city, locality: p.locality, country: p.country,
           category: p.category, reviews: p.reviews, placeId: p.placeId, sourceUrl: p.mapsUrl ?? `https://www.google.com/maps/place/?q=place_id:${p.placeId}`,
           raw: { ...p, query: placesQuery(geo.query, area) }
-        }, { campaignId, country: geo.country, source: 'gbp', foundAt }))
+        }, { campaignId, country: geo.country, source: 'gbp', foundAt }).catch((err) => {
+          log(`  failed to add "${p.name}": ${(err as Error).message}`)
+          return 'failed' as const
+        }))
       }
       if (!res.nextPageToken) break
       pageToken = res.nextPageToken
