@@ -260,7 +260,11 @@ const COLLECTIONS: Record<string, C> = {
   }
 }
 const LE = Object.keys(COLLECTIONS)
-const O2M = [{ collection: 'le_leads', field: 'events', many: 'le_events', manyField: 'lead_id' }]
+const O2M = [
+  { collection: 'le_leads', field: 'events', many: 'le_events', manyField: 'lead_id' },
+  { collection: 'le_leads', field: 'messages', many: 'le_messages', manyField: 'lead_id' },
+  { collection: 'le_leads', field: 'replies', many: 'le_replies', manyField: 'lead_id' }
+]
 
 // ---------- roles ----------
 
@@ -280,7 +284,9 @@ const ROLES: { name: string, app: boolean, grants: Grant }[] = [
       le_campaign_members: ['create', 'read', 'update', 'delete'],
       le_campaign_mailboxes: ['create', 'read', 'delete'],
       le_leads: ['read', 'update'],
-      le_messages: ['read', 'update'],
+      le_messages: ['create', 'read', 'update'],
+      le_replies: ['create', 'read', 'update'],
+      le_contacts: ['read', 'update'],
       le_events: ['create', 'read'],
       le_suppression: ['create', 'read']
     }
@@ -288,9 +294,9 @@ const ROLES: { name: string, app: boolean, grants: Grant }[] = [
   {
     name: 'LE Closer', app: true,
     grants: {
-      le_campaigns: ['read'], le_businesses: ['read'], le_signals: ['read'], le_contacts: ['read'],
+      le_campaigns: ['read'], le_businesses: ['read'], le_signals: ['read'], le_contacts: ['read', 'update'],
       le_audits: ['read'], le_leads: ['read', 'update'], le_messages: ['create', 'read'],
-      le_replies: ['read', 'update'], le_events: ['create', 'read'], le_suppression: ['create']
+      le_replies: ['create', 'read', 'update'], le_events: ['create', 'read'], le_suppression: ['create']
     }
   }
 ]
@@ -329,6 +335,7 @@ export function assertSafe(method: string, path: string, body: Record<string, un
       || (method === 'POST' && path === '/access' && ours.roles.has(String(body.role)) && ours.policies.has(String(body.policy)))
       || (method === 'POST' && path === '/permissions' && ours.policies.has(String(body.policy))
         && (isLe(body.collection) || (body.collection === USERS && body.action === 'read')))
+      || (method === 'PATCH' && /^\/relations\/le_[a-z_]+\/[a-z_]+$/.test(path) && Object.keys(body).join() === 'meta')
       || ((method === 'POST' || method === 'PATCH') && /^\/items\/le_[a-z_]+$/.test(path))
   if (!ok) throw new Error(`Refusing unsafe write: ${method} ${path} ${JSON.stringify(body).slice(0, 120)}`)
 }
@@ -364,7 +371,9 @@ async function main() {
 
   const collections = new Set((await api<{ collection: string }[]>('GET', '/collections?limit=-1')).map(c => c.collection))
   const fields = new Set((await api<{ collection: string, field: string }[]>('GET', '/fields?limit=-1')).map(f => `${f.collection}.${f.field}`))
-  const relations = new Set((await api<{ collection: string, field: string }[]>('GET', '/relations?limit=-1')).map(r => `${r.collection}.${r.field}`))
+  const relationList = await api<{ collection: string, field: string, meta: { one_field: string | null } | null }[]>('GET', '/relations?limit=-1')
+  const relations = new Set(relationList.map(r => `${r.collection}.${r.field}`))
+  const oneField = new Map(relationList.map(r => [`${r.collection}.${r.field}`, r.meta?.one_field ?? null]))
   const policies = new Map((await api<{ id: string, name: string }[]>('GET', '/policies?limit=-1&fields=id,name')).map(p => [p.name, p.id]))
   const roles = new Map((await api<{ id: string, name: string }[]>('GET', '/roles?limit=-1&fields=id,name')).map(r => [r.name, r.id]))
 
@@ -409,6 +418,14 @@ async function main() {
     }
   }
 
+  // Existing relations that still need their O2M side linked
+  for (const o of O2M) {
+    const k = `${o.many}.${o.manyField}`
+    if (relations.has(k) && oneField.get(k) !== o.field) {
+      await write(`link ${o.collection}.${o.field} <- ${k}`, 'PATCH', `/relations/${o.many}/${o.manyField}`, { meta: { one_field: o.field } })
+    }
+  }
+
   // Policies, roles, access, permissions
   for (const r of ROLES) {
     let policyId = policies.get(r.name)
@@ -422,14 +439,17 @@ async function main() {
       roleId = (await write(`role ${r.name}`, 'POST', '/roles', { name: r.name, icon: 'badge' })).id
     }
     ours.roles.add(roleId)
-    if (newPolicy) {
-      await write(`attach policy -> role ${r.name}`, 'POST', '/access', { role: roleId, policy: policyId })
-      const grants = Object.entries(r.grants)
-      for (const [collection, actions] of grants) {
-        for (const action of actions) {
-          await write(`  perm ${r.name}: ${action} ${collection}`, 'POST', '/permissions', { policy: policyId, collection, action, fields: ['*'], permissions: {}, validation: {} })
-        }
+    if (newPolicy) await write(`attach policy -> role ${r.name}`, 'POST', '/access', { role: roleId, policy: policyId })
+    const have = new Set(newPolicy
+      ? []
+      : (await api<{ collection: string, action: string }[]>('GET', `/permissions?limit=-1&fields=collection,action&filter[policy][_eq]=${policyId}`)).map(p => `${p.collection}:${p.action}`))
+    for (const [collection, actions] of Object.entries(r.grants)) {
+      for (const action of actions) {
+        if (have.has(`${collection}:${action}`)) continue
+        await write(`  perm ${r.name}: ${action} ${collection}`, 'POST', '/permissions', { policy: policyId, collection, action, fields: ['*'], permissions: {}, validation: {} })
       }
+    }
+    if (!have.has(`${USERS}:read`)) {
       await write(`  perm ${r.name}: read ${USERS} (id, names, email; LE + Administrator users only)`, 'POST', '/permissions', {
         policy: policyId, collection: USERS, action: 'read', fields: ['id', 'first_name', 'last_name', 'email'], permissions: TEAM_USERS_FILTER, validation: {}
       })

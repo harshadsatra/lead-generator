@@ -18,6 +18,7 @@ yet; each step is a plain function that pg-boss wraps later.
 - [x] Admin: Directus fetch helper with access-token refresh; Approval inbox lists `awaiting_approval` leads for a chosen campaign (business, score/band, top issues, PSI, site link), read-only
 - [x] Too-small filter: `le_global_config.min_reviews` (default 10)
 - [x] Gate 1 in the inbox: Approve with offer picker (mockup only for hot, enforced server-side), Reject with one-tap reason, Approved tab as the Phase 0 send list. Every decision logs an event with the user's email
+- [x] Phase 0 tracking in the inbox: tabs Awaiting → To send → Sent → Outcomes → Archived; Mark as sent (first email + up to `max_follow_ups`), Log reply (7 spec classes; unsubscribe → hashed suppression, bounce → contact invalid), Close no-response; stats bar with sent / reply / positive / bounce % and the 2% gate badge
 - [ ] Harshad test: import 5–10 real leads; check 2–3 audits against pagespeed.web.dev by hand
 
 Deferred until the gate: screenshots (Playwright), Wappalyzer, Enricher + Reacher, LLM agents, approve/send.

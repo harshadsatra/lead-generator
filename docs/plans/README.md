@@ -51,5 +51,5 @@ and rework the offer or segment (spec § Spend gates).
 - [ ] A sample Mantis CSV export (or your own sheet), to check the import columns.
 - [ ] Free PageSpeed Insights API key (`PAGESPEED_API_KEY`): Google Cloud → enable "PageSpeed Insights API" → create API key. Without one, Google allows only a few audits.
 - [ ] Scoring partial credit (`packages/shared/src/rubric.ts`, `FACTORS`): the spec gives weights but not partial credit, e.g. PSI mobile < 40 = half of Need, 20–49 reviews = a quarter of Size. Review before Phase 1b.
-- [ ] State machine gaps (needed by Phase 2): the spec diagram has no state for a bounce with no other contact, a referral reply (what happens to the original lead), or a lead where the Enricher finds no contact at all.
+- [ ] State machine gaps, interim choices (27 Sep, revisit in Phase 2): referral → handed to closer (closer adds the referred contact); bounce → closed_lost + contact invalid; later / out of office → back in sequence. Still open: a lead where the Enricher finds no contact at all.
 - [ ] Phase 0 lead source: Mantis's free tier gives only about 20 leads with contacts. Buy Mantis (₹3,499), buy LeadSweep Starter ($39), or pull the other 30 by hand?

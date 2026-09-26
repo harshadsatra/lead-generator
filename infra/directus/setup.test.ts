@@ -14,6 +14,7 @@ test('allows only le_ / LE writes', () => {
   assert.doesNotThrow(() => assertSafe('POST', '/permissions', { policy: 'p-ours', collection: 'le_leads', action: 'update' }))
   assert.doesNotThrow(() => assertSafe('POST', '/permissions', { policy: 'p-ours', collection: 'directus_users', action: 'read' }))
   assert.doesNotThrow(() => assertSafe('PATCH', '/items/le_global_config', {}))
+  assert.doesNotThrow(() => assertSafe('PATCH', '/relations/le_messages/lead_id', { meta: { one_field: 'messages' } }))
 })
 
 test('refuses anything touching other projects', () => {
@@ -31,7 +32,9 @@ test('refuses anything touching other projects', () => {
     ['POST', '/items/enquiry', {}],
     ['PATCH', '/collections/projects', {}],
     ['DELETE', '/collections/le_leads', {}],
-    ['DELETE', '/items/le_leads', {}]
+    ['DELETE', '/items/le_leads', {}],
+    ['PATCH', '/relations/projects/owner', { meta: {} }],
+    ['PATCH', '/relations/le_messages/lead_id', { schema: { on_delete: 'NO ACTION' } }]
   ]
   for (const [m, p, b] of bad) assert.throws(() => assertSafe(m, p, b), /Refusing unsafe write/, `${m} ${p}`)
 })

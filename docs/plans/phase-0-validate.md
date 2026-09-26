@@ -30,7 +30,7 @@ reply, and write down any "not now" answers.
 - [ ] Write a one-page ICP: who qualifies, who is disqualified, which case study to cite
 - [ ] Get 50 leads **with website URLs and emails** (the 26 Sep London export had neither: every Website cell was empty and no emails)
 - [ ] Import: `pnpm le:import <file.csv> --country GB --campaign "<name>" --segment "Real estate developers and brokers"`, then `pnpm le:process --campaign "<name>"`
-- [ ] Tracking sheet columns: business, contact, source URL, found date, PSI mobile, top 3 issues, sent date, follow-up dates, reply, class, next step
+- [ ] Track in the inbox instead of a sheet: Mark as sent / Log reply per lead; the stats bar shows the gate numbers
 
 ## Audits (automated by `le:process`)
 

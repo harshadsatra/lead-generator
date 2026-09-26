@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto'
-
 const SOCIAL_HOSTS = ['facebook.com', 'fb.com', 'instagram.com', 'linktr.ee', 'wa.me', 'whatsapp.com', 'justdial.com', 'google.com', 'goo.gl', 'g.page']
 
 export function normalizeWebsite(input: string | undefined): { url: string | null, domain: string | null, socialOnly: boolean } {
@@ -53,7 +51,7 @@ export function parseCount(input: string | undefined): number | null {
   return last ? Number(last.replace(/,/g, '')) : null
 }
 
-export const hash = (v: string) => createHash('sha256').update(v.trim().toLowerCase()).digest('hex')
+export { hash } from '@lead/shared/hash'
 
 const ALIASES: Record<string, string[]> = {
   name: ['name', 'businessname', 'business', 'company', 'companyname', 'title'],
