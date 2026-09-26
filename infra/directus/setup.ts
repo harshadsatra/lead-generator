@@ -287,6 +287,7 @@ const ROLES: { name: string, app: boolean, grants: Grant }[] = [
       le_messages: ['create', 'read', 'update'],
       le_replies: ['create', 'read', 'update'],
       le_contacts: ['read', 'update'],
+      le_segments: ['create', 'read'],
       le_events: ['create', 'read'],
       le_suppression: ['create', 'read']
     }
