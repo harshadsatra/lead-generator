@@ -36,4 +36,7 @@ test('matches Maps results only when names clearly agree', () => {
   assert.equal(sameCompany('Kiwi', 'Kiwi Fruit Stall'), true)
   assert.equal(sameCompany('Kiwi', 'The Kiwi Cafe'), false)
   assert.equal(sameCompany('Per Annum', 'Annum Consulting'), false)
+  assert.equal(sameCompany('Rivet', 'Rivets India'), false)
+  assert.equal(sameCompany('CodeKarma', 'CodeKarma Technologies Private Limited'), true)
+  assert.equal(sameCompany('CodeKarma', 'Code Karma'), true)
 })

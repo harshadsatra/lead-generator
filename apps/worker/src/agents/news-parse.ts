@@ -44,9 +44,14 @@ export function fundingCompany(title: string): string | null {
 
 const norm = (s: string) => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '')
 
-// Only trust a Maps result that clearly is the same company.
+const words = (s: string) => s.toLowerCase().replace(/&/g, ' and ').split(/[^a-z0-9]+/).filter(Boolean)
+
+// Only trust a Maps result that clearly is the same company: identical, or the company's words are the
+// Maps name's first words ("Dextr AI" ~ "Dextr AI Technologies Pvt Ltd", but not "Rivet" ~ "Rivets India").
 export function sameCompany(company: string, placeName: string): boolean {
-  const a = norm(company)
-  const b = norm(placeName)
-  return a.length >= 3 && (b === a || b.startsWith(a) || (a.length >= 6 && b.includes(a)))
+  if (norm(company).length < 3) return false
+  if (norm(company) === norm(placeName)) return true
+  const a = words(company)
+  const b = words(placeName)
+  return a.length <= b.length && a.every((w, i) => b[i] === w)
 }

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { COUNTRY_NAMES } from '@lead/shared'
-import { CAMPAIGN_STATUS } from '#shared/campaign'
+import { CAMPAIGN_STATUS, SOURCES } from '#shared/campaign'
 
 const route = useRoute()
 const toast = useToast()
 const id = route.params.id as string
 
 const { data: c, refresh } = await useFetch(`/api/campaigns/${id}`)
+const isNews = computed(() => c.value?.scanners?.includes('news') ?? false)
 const working = computed(() => ['scan_requested', 'scanning'].includes(c.value?.status ?? ''))
 useIntervalFn(() => refresh(), 10_000)
 
@@ -84,33 +85,56 @@ const day = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(undefined,
           <dl class="grid gap-3 sm:grid-cols-2 text-sm">
             <div>
               <dt class="text-muted">
+                Source
+              </dt>
+              <dd>{{ isNews ? SOURCES.news : SOURCES.gbp }}</dd>
+            </div>
+            <div>
+              <dt class="text-muted">
                 Segment
-              </dt><dd>{{ c.segment_id?.name ?? '–' }}</dd>
+              </dt>
+              <dd>{{ c.segment_id?.name ?? '–' }}</dd>
             </div>
             <div>
               <dt class="text-muted">
                 Country
-              </dt><dd>{{ c.geography?.country ? COUNTRY_NAMES[c.geography.country] ?? c.geography.country : '–' }}</dd>
+              </dt>
+              <dd>{{ c.geography?.country ? COUNTRY_NAMES[c.geography.country] ?? c.geography.country : '–' }}</dd>
             </div>
-            <div>
+            <div v-if="isNews">
               <dt class="text-muted">
-                Search for
-              </dt><dd>{{ c.geography?.query ?? '–' }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted">
-                Areas
+                News checks
               </dt>
               <dd>
-                <span v-for="a in c.geography?.areas ?? []" :key="a" class="block">
-                  {{ a }}<span v-if="c.geography?.scanned?.[a]" class="text-muted"> · scanned {{ day(c.geography.scanned[a]) }}</span>
-                </span>
+                Every 6 hours while active; each new funding headline costs 1 Google Maps search.
+                <template v-if="c.geography?.news?.last">
+                  Last check {{ day(c.geography.news.last) }}, {{ c.geography.news.seen?.length ?? 0 }} articles read.
+                </template>
               </dd>
             </div>
+            <template v-else>
+              <div>
+                <dt class="text-muted">
+                  Search for
+                </dt>
+                <dd>{{ c.geography?.query ?? '–' }}</dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  Areas
+                </dt>
+                <dd>
+                  <span v-for="a in c.geography?.areas ?? []" :key="a" class="block">
+                    {{ a }}<span v-if="c.geography?.scanned?.[a]" class="text-muted"> · scanned {{ day(c.geography.scanned[a]) }}</span>
+                  </span>
+                </dd>
+              </div>
+            </template>
           </dl>
           <template #footer>
             <div class="flex flex-wrap gap-2">
               <UButton
+                v-if="!isNews"
                 label="Preview first area"
                 icon="i-lucide-search"
                 color="neutral"
@@ -120,7 +144,7 @@ const day = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(undefined,
               />
               <UButton
                 v-if="['draft', 'active', 'paused', 'scan_failed'].includes(c.status)"
-                :label="c.status === 'draft' ? 'Launch scan' : 'Scan again'"
+                :label="c.status === 'draft' ? (isNews ? 'Start watching news' : 'Launch scan') : (isNews ? 'Check news now' : 'Scan again')"
                 icon="i-lucide-rocket"
                 :loading="busy === 'launch' || working"
                 @click="setStatus('launch')"

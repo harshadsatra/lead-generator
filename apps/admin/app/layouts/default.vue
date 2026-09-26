@@ -33,6 +33,11 @@ const links = [[{
   icon: 'i-lucide-shapes',
   to: '/segments',
   onSelect: close
+}, {
+  label: 'Reddit',
+  icon: 'i-simple-icons-reddit',
+  to: '/reddit',
+  onSelect: close
 }], [{
   label: 'Team & settings',
   icon: 'i-lucide-settings',

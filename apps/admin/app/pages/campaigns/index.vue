@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { COUNTRY_NAMES } from '@lead/shared'
-import { CAMPAIGN_STATUS, CampaignInput } from '#shared/campaign'
+import { CAMPAIGN_STATUS, SOURCES } from '#shared/campaign'
 
 const toast = useToast()
 const { data: campaigns } = await useFetch('/api/campaigns', { default: () => [] })
@@ -10,20 +10,35 @@ const { data: segments } = await useFetch('/api/segments', { default: () => [] }
 
 const open = ref(false)
 const saving = ref(false)
-const form = reactive({ name: '', segment_id: '', country: 'GB', query: '', areasText: '', is_test: false })
+const form = reactive({ name: '', source: 'gbp' as 'gbp' | 'news', segment_id: '', country: 'GB', query: '', areasText: '', is_test: false })
+const sourceItems = Object.entries(SOURCES).map(([value, label]) => ({ label, value }))
 const countryItems = Object.entries(COUNTRY_NAMES).map(([value, label]) => ({ label, value }))
 const segmentItems = computed(() => segments.value.map(s => ({ label: s.name, value: s.id })))
 
 const lines = (t: string) => t.split('\n').map(a => a.trim()).filter(Boolean)
-const schema = CampaignInput.omit({ areas: true }).extend({
-  areasText: z.string().refine(t => lines(t).length > 0, 'Add at least one area').refine(t => lines(t).length <= 20, 'At most 20 areas')
+const schema = z.object({
+  name: z.string().trim().min(3, 'Give the campaign a name'),
+  source: z.enum(['gbp', 'news']),
+  segment_id: z.string().min(1, 'Pick a segment'),
+  country: z.string().min(2, 'Pick a country'),
+  query: z.string(),
+  areasText: z.string(),
+  is_test: z.boolean()
+}).superRefine((f, ctx) => {
+  if (f.source !== 'gbp') return
+  if (f.query.trim().length < 3) ctx.addIssue({ code: 'custom', path: ['query'], message: 'What should Google search for?' })
+  const n = lines(f.areasText).length
+  if (!n) ctx.addIssue({ code: 'custom', path: ['areasText'], message: 'Add at least one area' })
+  if (n > 20) ctx.addIssue({ code: 'custom', path: ['areasText'], message: 'At most 20 areas' })
 })
 
 async function onSubmit(e: FormSubmitEvent<typeof form>) {
   const areas = lines(e.data.areasText)
   saving.value = true
   try {
-    const c = await $fetch('/api/campaigns', { method: 'POST', body: { ...e.data, areasText: undefined, areas } })
+    const { areasText: _, ...rest } = e.data
+    const body = e.data.source === 'gbp' ? { ...rest, areas } : { ...rest, query: undefined }
+    const c = await $fetch('/api/campaigns', { method: 'POST', body })
     open.value = false
     await navigateTo(`/campaigns/${c.id}`)
   } catch (err) {
@@ -66,7 +81,7 @@ async function onSubmit(e: FormSubmitEvent<typeof form>) {
               {{ c.name }}
             </p>
             <p class="text-sm text-muted truncate">
-              {{ [c.segment_id?.name, c.geography?.country && COUNTRY_NAMES[c.geography.country], c.geography?.areas?.length ? `${c.geography.areas.length} areas` : null].filter(Boolean).join(' · ') }}
+              {{ [c.scanners?.includes('news') ? 'Startup news' : 'Google Maps', c.segment_id?.name, c.geography?.country && COUNTRY_NAMES[c.geography.country], c.geography?.areas?.length ? `${c.geography.areas.length} areas` : null].filter(Boolean).join(' · ') }}
             </p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -91,6 +106,9 @@ async function onSubmit(e: FormSubmitEvent<typeof form>) {
             <UFormField label="Name" name="name">
               <UInput v-model="form.name" placeholder="London agencies P0" class="w-full" />
             </UFormField>
+            <UFormField label="Source" name="source">
+              <USelect v-model="form.source" :items="sourceItems" class="w-full" />
+            </UFormField>
             <UFormField label="Segment" name="segment_id">
               <USelect
                 v-model="form.segment_id"
@@ -109,10 +127,20 @@ async function onSubmit(e: FormSubmitEvent<typeof form>) {
             <UFormField label="Country" name="country">
               <USelect v-model="form.country" :items="countryItems" class="w-full" />
             </UFormField>
-            <UFormField label="Search for" name="query" help="What you'd type into Google Maps, e.g. &quot;real estate agency&quot;">
+            <UFormField
+              v-if="form.source === 'gbp'"
+              label="Search for"
+              name="query"
+              help="What you'd type into Google Maps, e.g. &quot;real estate agency&quot;"
+            >
               <UInput v-model="form.query" placeholder="real estate agency" class="w-full" />
             </UFormField>
-            <UFormField label="Areas" name="areasText" help="One per line, e.g. &quot;Covent Garden, London&quot;. Up to 20; each area is up to 60 businesses.">
+            <UFormField
+              v-if="form.source === 'gbp'"
+              label="Areas"
+              name="areasText"
+              help="One per line, e.g. &quot;Covent Garden, London&quot;. Up to 20; each area is up to 60 businesses."
+            >
               <UTextarea
                 v-model="form.areasText"
                 :rows="4"
