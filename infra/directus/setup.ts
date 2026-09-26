@@ -3,7 +3,7 @@
 // Run: pnpm le:setup [--apply]
 
 import { fileURLToPath } from 'node:url'
-import { directus } from './api.ts'
+import { directus } from '../../packages/shared/src/directus.ts'
 
 const APPLY = process.argv.includes('--apply')
 

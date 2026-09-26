@@ -1,3 +1,4 @@
+// Node-only (reads process.env): import via "@lead/shared/directus", never from browser code.
 export function directus(token: string | undefined) {
   const base = process.env.DIRECTUS_URL
   if (!base || !token) throw new Error('DIRECTUS_URL and a Directus token must be set in .env')

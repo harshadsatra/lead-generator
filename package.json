@@ -13,6 +13,10 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test && node --experimental-strip-types --no-warnings --test infra/directus/*.test.ts",
     "le:setup": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/setup.ts",
-    "le:cleanup-test": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/cleanup-test.ts"
+    "le:cleanup-test": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/cleanup-test.ts",
+    "le:import": "tsx --env-file=.env apps/worker/src/cli/import.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
   }
 }

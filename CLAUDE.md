@@ -19,6 +19,7 @@ pnpm typecheck                           # all packages
 pnpm lint                                # admin (eslint via @nuxt/eslint)
 pnpm test                                # node:test via tsx, files *.test.ts (+ infra guard test)
 pnpm le:setup [--apply] [--verbose]      # Directus le_* schema/roles/seed; dry run unless --apply
+pnpm le:import <file.csv> --campaign "<name>" [--segment "<segment>"] [--source mantis] [--test]
 pnpm le:cleanup-test [--apply]           # delete all is_test campaign data; dry run unless --apply
 pnpm --filter @lead/shared exec tsx --test src/<file>.test.ts  # single test file
 ```
@@ -48,7 +49,7 @@ Pipeline (spec § System architecture): Scanner plugins → dedupe → Enricher 
 - create, alter or delete any Directus collection, field, role, flow or setting that isn't `le_*` / `LE *`. Schema changes go through `infra/directus/setup.ts` (create-only, `--dry-run` first, output shown to Harshad).
 - delete data in Directus except through `pnpm le:cleanup-test` (only `is_test` campaigns) or with Harshad's explicit OK.
 - send real email outside `SEND_MODE=live`, which only Harshad sets. Dev uses `dry_run`, tests use `allowlist`. `is_test` campaigns never send live.
-- start Phase 1b work before the Phase 0 gate passes.
+- start Phase 1b work before the Phase 0 gate passes, except §0 (Phase 0 helper: import, audit, score, read-only inbox; no LLM, paid APIs or sending).
 - build automated DMs for LinkedIn/Instagram/X, or scrape Google Maps or LinkedIn (spec § Non-goals, § Avoid).
 - commit `.env` or secrets. Add new variables to `.env.example` by name only.
 

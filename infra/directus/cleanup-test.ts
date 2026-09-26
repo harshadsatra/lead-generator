@@ -2,7 +2,7 @@
 // plus businesses no real campaign uses. Keeps suppression and llm_usage rows.
 // Dry run by default; pass --apply to delete. Run: pnpm le:cleanup-test [--apply]
 import { fileURLToPath } from 'node:url'
-import { directus, q } from './api.ts'
+import { directus, q } from '../../packages/shared/src/directus.ts'
 
 export function businessesToDelete(testLeadBusinesses: string[], businessesWithRealLeads: string[]): string[] {
   const keep = new Set(businessesWithRealLeads)
