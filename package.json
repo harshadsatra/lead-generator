@@ -11,6 +11,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test && node --experimental-strip-types --no-warnings --test infra/directus/*.test.ts",
+    "le:setup": "node --experimental-strip-types --no-warnings --env-file=.env infra/directus/setup.ts"
   }
 }

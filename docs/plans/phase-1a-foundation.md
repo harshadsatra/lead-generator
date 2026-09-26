@@ -65,7 +65,7 @@ Directus SDK. It skips anything that already exists, never deletes or alters
 non-`le_` items, and supports `--dry-run` (prints the plan). Run the dry run and
 show Harshad the output before the first real run.
 
-- [ ] Setup script with `--dry-run`; refuses any collection/role not prefixed `le_` / `LE`
+- [x] Setup script, dry run by default (`pnpm le:setup`, `--apply` to write); refuses any collection/role not prefixed `le_` / `LE`
 - [ ] "Lead Engine" collection folder
 - [ ] Core: `le_businesses`, `le_signals`, `le_contacts`, `le_audits`, `le_leads`, `le_messages`, `le_replies`, `le_events`, `le_suppression`
 - [ ] Campaign + team: `le_campaigns` (incl. **`is_test`** boolean), `le_campaign_mailboxes`, `le_team_members`, `le_campaign_members`; `le_leads` gets `campaign_id`, `owner_id`, `offer`

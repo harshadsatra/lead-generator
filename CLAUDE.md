@@ -17,7 +17,8 @@ pnpm --filter @lead/admin dev            # Nuxt admin on :3000
 pnpm --filter @lead/worker dev           # worker (tsx watch)
 pnpm typecheck                           # all packages
 pnpm lint                                # admin (eslint via @nuxt/eslint)
-pnpm test                                # node:test via tsx, files *.test.ts
+pnpm test                                # node:test via tsx, files *.test.ts (+ infra guard test)
+pnpm le:setup [--apply] [--verbose]      # Directus le_* schema/roles/seed; dry run unless --apply
 pnpm --filter @lead/shared exec tsx --test src/<file>.test.ts  # single test file
 ```
 
