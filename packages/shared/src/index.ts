@@ -43,3 +43,4 @@ export type Role = z.infer<typeof Role>
 
 export * from './state'
 export * from './rubric'
+export * from './access'

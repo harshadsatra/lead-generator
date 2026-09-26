@@ -71,7 +71,9 @@ approve them, and send, before building automated discovery.
 
 ## 8. Admin UI (Nuxt)
 
-- [ ] Directus auth from Nuxt (Directus SDK), role-aware nav
+- [x] Login against Directus (built early, see Phase 1a §4)
+- [ ] Server-side Directus fetch helper that refreshes the access token (with the first data route)
+- [ ] Role-aware nav (Closer sees Hot replies only, etc.)
 - [ ] **Campaigns**: list, new-campaign form (spec § Campaign inputs; city list first, map picker later), pre-flight (sample scan, lead estimate, mailbox capacity, cost estimate), confirm, then Launch/Pause/Resume/Clone/Archive
 - [ ] **Approval inbox**: cards (business, score/band, top finding + screenshot, hook, draft), offer picker (mockup only for hot), Approve / Edit / Reject-with-reason / Snooze, A/E/R shortcuts, mobile-friendly
 - [ ] Team + Settings: use Directus Data Studio (no custom screens in phase 1)

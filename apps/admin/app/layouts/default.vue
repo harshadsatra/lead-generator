@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+
+const { user, clear } = useUserSession()
+
+const userItems: DropdownMenuItem[][] = [[{
+  label: 'Sign out',
+  icon: 'i-lucide-log-out',
+  async onSelect() {
+    await $fetch('/api/auth/logout', { method: 'POST' })
+    await clear()
+    await navigateTo('/login')
+  }
+}]]
 
 const open = ref(false)
 const close = () => {
@@ -53,6 +65,20 @@ const links = [[{
           tooltip
           class="mt-auto"
         />
+      </template>
+
+      <template #footer="{ collapsed }">
+        <UDropdownMenu :items="userItems" :content="{ align: 'center', collisionPadding: 12 }">
+          <UButton
+            :label="collapsed ? undefined : user?.name"
+            icon="i-lucide-circle-user"
+            color="neutral"
+            variant="ghost"
+            block
+            :square="collapsed"
+            class="data-[state=open]:bg-elevated"
+          />
+        </UDropdownMenu>
       </template>
     </UDashboardSidebar>
 

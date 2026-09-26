@@ -3,7 +3,8 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@vueuse/nuxt'
+    '@vueuse/nuxt',
+    'nuxt-auth-utils'
   ],
 
   devtools: {
@@ -11,6 +12,13 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
+
+  runtimeConfig: {
+    directusUrl: 'https://cms.shwezstudio.in',
+    session: {
+      maxAge: 60 * 60 * 24 * 7
+    }
+  },
 
   compatibilityDate: '2026-06-30',
 
