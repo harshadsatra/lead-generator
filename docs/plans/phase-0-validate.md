@@ -32,11 +32,10 @@ reply, and write down any "not now" answers.
 - [ ] Import: `pnpm le:import <file.csv> --country GB --campaign "<name>" --segment "Real estate developers and brokers"`, then `pnpm le:process --campaign "<name>"`
 - [ ] Tracking sheet columns: business, contact, source URL, found date, PSI mobile, top 3 issues, sent date, follow-up dates, reply, class, next step
 
-## Audits (by hand)
+## Audits (automated by `le:process`)
 
-- [ ] Run PageSpeed Insights (mobile + desktop) for each lead
-- [ ] Check SSL, mobile view, contact form, and whether the site is broken, parked or "under construction"
-- [ ] Write 1 headline issue per lead that maps to a measured number
+- [ ] Spot-check 2–3 audits against pagespeed.web.dev
+- [ ] Approve/reject in the inbox; the **Approved** tab is the send list, and each lead's top issue is the email opener
 
 ## Sending
 
